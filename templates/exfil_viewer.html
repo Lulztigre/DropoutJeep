@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ EXFIL_VIEWER ]</h1>
+      <p class="text-sm font-mono-brutal text-brutal-red font-bold">&gt; HTTP and DNS exfiltration data from landing pages.</p>
+    </div>
+  </header>
+
+<!-- Filter bar -->
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] flex flex-wrap gap-4 items-center">
+  <span class="font-mono-brutal text-xs font-bold">FILTER:</span>
+  <a href="{{ url_for('admin_exfil') }}"
+     class="px-3 py-1.5 font-mono-brutal text-xs font-bold border-2 border-pure-black dark:border-stark-white {{ 'bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black' if not event_type else 'hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all' }}">
+    ALL
+  </a>
+  <a href="{{ url_for('admin_exfil', type='exfil_http') }}"
+     class="px-3 py-1.5 font-mono-brutal text-xs font-bold border-2 border-pure-black dark:border-stark-white {{ 'bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black' if event_type == 'exfil_http' else 'hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all' }}">
+    HTTP
+  </a>
+  <a href="{{ url_for('admin_exfil', type='exfil_dns') }}"
+     class="px-3 py-1.5 font-mono-brutal text-xs font-bold border-2 border-pure-black dark:border-stark-white {{ 'bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black' if event_type == 'exfil_dns' else 'hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all' }}">
+    DNS
+  </a>
+  <span class="font-mono-brutal text-xs text-gray-500 ml-auto">{{ total }} event(s) total</span>
+</div>
+
+<!-- Results -->
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  {% if results %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-left font-mono-brutal text-xs">
+      <thead>
+        <tr class="border-b-2 border-pure-black dark:border-stark-white">
+          <th class="p-2 uppercase">ID</th>
+          <th class="p-2 uppercase">Type</th>
+          <th class="p-2 uppercase">Campaign</th>
+          <th class="p-2 uppercase">Recipient</th>
+          <th class="p-2 uppercase">IP</th>
+          <th class="p-2 uppercase">Data</th>
+          <th class="p-2 uppercase">Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-off-white dark:hover:bg-black transition-colors">
+          <td class="p-2 font-bold">#{{ r.event.id }}</td>
+          <td class="p-2">
+            {% if r.event.event_type == 'exfil_http' %}
+              <span class="px-2 py-0.5 border-2 border-brutal-amber text-brutal-amber font-bold">HTTP</span>
+            {% else %}
+              <span class="px-2 py-0.5 border-2 border-brutal-emerald text-brutal-emerald font-bold">DNS</span>
+            {% endif %}
+          </td>
+          <td class="p-2">
+            {% if r.campaign %}
+              <a href="/admin/campaign/{{ r.campaign.id }}/analytics" class="underline hover:text-brutal-red">{{ r.campaign.name[:30] }}</a>
+            {% else %}
+              <span class="text-gray-500">-</span>
+            {% endif %}
+          </td>
+          <td class="p-2">
+            {% if r.recipient %}
+              {{ r.recipient.email[:30] }}
+            {% else %}
+              <span class="text-gray-500">-</span>
+            {% endif %}
+          </td>
+          <td class="p-2">{{ r.meta.get('ip', '-') }}</td>
+          <td class="p-2">
+            {% if r.event.event_type == 'exfil_http' %}
+              {% set data = r.meta.get('data', {}) %}
+              {% if data is mapping %}
+                {% for k, v in data.items() %}
+                  <span class="inline-block px-1.5 py-0.5 border border-gray-300 dark:border-gray-700 mr-1 mb-1 bg-off-white dark:bg-black">
+                    <span class="font-bold">{{ k }}:</span> {{ v|string|truncate(60) }}
+                  </span>
+                {% endfor %}
+              {% else %}
+                <span class="break-all">{{ data|truncate(100) }}</span>
+              {% endif %}
+            {% else %}
+              {% set decoded = r.meta.get('decoded', '') %}
+              {% set encoded = r.meta.get('encoded', '') %}
+              {% if decoded and decoded != encoded %}
+                <div class="mb-1"><span class="font-bold text-brutal-emerald">DECODED:</span> <span class="break-all">{{ decoded|truncate(100) }}</span></div>
+                <div class="text-gray-500"><span class="font-bold">RAW:</span> <span class="break-all">{{ encoded|truncate(60) }}</span></div>
+              {% else %}
+                <span class="break-all">{{ encoded|truncate(100) }}</span>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td class="p-2 whitespace-nowrap">{{ r.event.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.event.created_at else '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="mt-6 flex justify-between font-mono-brutal text-xs">
+    {% if page > 1 %}
+    <a href="{{ url_for('admin_exfil', page=page-1, type=event_type) }}" class="px-3 py-1 brutal-btn-white">&larr; Previous</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    <span class="text-gray-500">Page {{ page }} of {{ ((total + per_page - 1) // per_page) }}</span>
+    {% if page * per_page < total %}
+    <a href="{{ url_for('admin_exfil', page=page+1, type=event_type) }}" class="px-3 py-1 brutal-btn-white">Next &rarr;</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-12">
+    No exfiltration events recorded yet. Data will appear here when landing pages send HTTP/DNS exfil beacons.
+  </p>
+  {% endif %}
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{{ title }}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #F4F4F6;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 32px;
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0 0 #000;
+    }
+    h2 {
+      text-align: center;
+      color: #000;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      text-align: center;
+      color: #555;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #000;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #000;
+      font-size: 16px;
+      margin-bottom: 18px;
+    }
+    button {
+      width: 100%;
+      background: #000;
+      color: #fff;
+      padding: 14px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    button:hover { background: #333; }
+    .footer {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 11px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>{{ title }}</h2>
+    <p class="subtitle">Enter the 6-digit code from your authenticator app to continue.</p>
+    <form method="post">
+      <input type="hidden" name="token" value="{{ token }}">
+      <label for="code">AUTHENTICATION CODE</label>
+      <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="000000" required autofocus>
+      <button type="submit">VERIFY CODE</button>
+    </form>
+    <div class="footer">This is a simulated page. The code you enter will be recorded as training evidence.</div>
+  </div>
+</body>
+</html>

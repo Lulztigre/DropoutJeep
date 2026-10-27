@@ -1,0 +1,65 @@
+services:
+  dropoutjeep:
+    build: .
+    environment:
+      - FLASK_SECRET=${FLASK_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - BASE_URL=https://${PHISH_DOMAIN}
+      - HMAC_SECRET=${HMAC_SECRET}
+      # Encrypts stored secrets (SMTP and IMAP passwords, DKIM private keys,
+      # captured credentials). Generate once on first install and never change
+      # it: a new key makes every previously stored secret unreadable.
+      - FERNET_KEY=${FERNET_KEY}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/instance/phish.db}
+      - HOST=0.0.0.0
+      - PORT=5000
+      - FLASK_DEBUG=false
+      - USE_PROXYFIX=1
+      - PROXYFIX_X_FOR=1
+      - PROXYFIX_X_PROTO=1
+      - AUDIT_LOG=/app/instance/audit.log
+    volumes:
+      - dropoutjeep-data:/app/instance
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dropoutjeep
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      - PHISH_DOMAIN=${PHISH_DOMAIN}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dropoutjeep
+    depends_on:
+      - dropoutjeep
+
+volumes:
+  dropoutjeep-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  dropoutjeep:
+    # Pinned so the standalone proxy stack (docker-compose.proxy.yml) can join
+    # the same network no matter what directory the repo lives in.
+    name: dropoutjeep-net

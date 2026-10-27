@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+{% block content %}
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold font-mono-brutal tracking-tight text-[var(--dj-fg)] mb-2">[ {{ current_user.role.upper() if current_user else 'ADMIN' }}_DASHBOARD ]</h1>
+      <p class="text-sm font-mono-brutal text-brutal-red font-bold">&gt; {{ current_user.role.capitalize() if current_user else 'Administrative' }} management portal & preflight orchestration panel.</p>
+    </div>
+    <div class="font-mono-brutal text-xs bg-[var(--dj-card)] border-2 border-pure-black dark:border-stark-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(225,29,72,1)]">
+      ACCESS_LEVEL: <span class="text-brutal-red font-bold">{{ current_user.role.upper() if current_user else 'UNKNOWN' }}</span>
+    </div>
+  </header>
+
+  <!-- Metrics Grid -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8 font-mono-brutal">
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Campaigns</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-pure-black" id="stat-campaigns">{{ stats|length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Recipients</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-pure-black" id="stat-recipients">-</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Opens</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-brutal-emerald" id="stat-opens">-</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Clicks</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-brutal-amber" id="stat-clicks">-</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Creds</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-brutal-red" id="stat-creds">-</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">MFA</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-brutal-amber" id="stat-mfa">-</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Complete</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-brutal-emerald" id="stat-flow-complete">-</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-bold uppercase">Avg Risk</div>
+      <div class="text-2xl md:text-4xl font-black mt-2 text-brutal-red" id="stat-risk">-</div>
+    </div>
+  </div>
+  <script>document.getElementById('stat-risk').textContent = '{{ overall_avg_risk }}';</script>
+
+  <!-- Chart Pane -->
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ CAMPAIGN_METRICS_CHART ]</h2>
+    <div class="bg-off-white dark:bg-black p-2 border-2 border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)]">
+      <canvas id="campaignChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <!-- Navigation Grid / Quick Actions -->
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ QUICK_ACTIONS ]</h2>
+    <div class="flex flex-wrap gap-3 font-mono-brutal text-xs">
+      <a class="px-4 py-2.5 brutal-btn-black text-center" href="/admin/campaign/new">New Campaign</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/sending_profile/new">New Sending Profile</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/subsidiary/new">New Subsidiary</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/dkim/generate">Generate DKIM</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/events">Events</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/logs">Logs</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/auto-reply">Auto-Replies</a>
+      {% if current_user.role == 'admin' %}
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/settings">Settings</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/users">Users</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/api-tokens">API Tokens</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/templates">Templates</a>
+      <a class="px-4 py-2.5 brutal-btn-white text-center" href="/admin/suppressions">Suppressions</a>
+      <a class="px-4 py-2.5 border-2 border-brutal-red text-brutal-red font-bold hover:bg-brutal-red hover:text-white transition-all text-center shadow-[2px_2px_0px_0px_rgba(225,29,72,1)]" href="/admin/purge">Purge Old Events</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Campaigns Table -->
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ CAMPAIGN_MANAGEMENT_TABLE ]</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-sm min-w-[1200px]">
+        <thead>
+          <tr class="border-b-2 border-pure-black dark:border-stark-white text-gray-600 dark:text-gray-400 text-xs">
+            <th class="py-3 px-2 font-bold">CAMPAIGN NAME</th>
+            <th class="py-3 px-2 font-bold">SENT</th>
+            <th class="py-3 px-2 font-bold">OPENS</th>
+            <th class="py-3 px-2 font-bold">CLICKS</th>
+            <th class="py-3 px-2 font-bold">CREDS</th>
+            <th class="py-3 px-2 font-bold">MFA</th>
+            <th class="py-3 px-2 font-bold">COMPLETE</th>
+            <th class="py-3 px-2 font-bold">RISK</th>
+            <th class="py-3 px-2 font-bold">TRAINING</th>
+            <th class="py-3 px-2 font-bold">SCHEDULE</th>
+            <th class="py-3 px-2 font-bold">CANARIES</th>
+            <th class="py-3 px-2 font-bold">FUNNEL</th>
+            <th class="py-3 px-2 font-bold">PROGRESS</th>
+            <th class="py-3 px-2 text-right font-bold">EXECUTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in stats %}
+          <tr class="border-b border-off-white dark:border-gray-800 hover:bg-off-white dark:hover:bg-gray-900 transition-colors" data-campaign-id="{{ s.campaign.id }}">
+            <td class="py-3 px-2"><a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=s.campaign.id) }}" class="text-[var(--dj-fg)] font-extrabold hover:text-brutal-red transition-colors underline decoration-2 decoration-transparent hover:decoration-brutal-red">{{ s.campaign.name }}</a></td>
+            <td class="py-3 px-2 font-bold" id="sent-{{ s.campaign.id }}">{{ s.sent }}</td>
+            <td class="py-3 px-2 text-brutal-emerald font-bold" id="opens-{{ s.campaign.id }}">{{ s.opens }}</td>
+            <td class="py-3 px-2 text-brutal-amber font-bold" id="clicks-{{ s.campaign.id }}">{{ s.clicks }}</td>
+            <td class="py-3 px-2 text-brutal-red font-bold" id="creds-{{ s.campaign.id }}">{{ s.creds }}</td>
+            <td class="py-3 px-2 text-brutal-amber font-bold" id="mfa-{{ s.campaign.id }}">{{ s.mfa }}</td>
+            <td class="py-3 px-2 text-brutal-emerald font-bold" id="flow-complete-{{ s.campaign.id }}">{{ s.flow_complete }}</td>
+            <td class="py-3 px-2 text-pure-black font-bold">
+              {{ s.avg_risk }}
+              {% if s.high_risk_count > 0 %}
+                <span class="text-brutal-red">({{ s.high_risk_count }})</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-2 text-[var(--dj-fg)] font-bold"><span id="training-completed-{{ s.campaign.id }}">{{ s.training_completed }}</span>/<span id="training-started-{{ s.campaign.id }}">{{ s.training_started }}</span></td>
+            <td class="py-3 px-2 text-[var(--dj-fg)] font-bold">
+              {% if s.campaign.schedule_enabled %}
+                <span class="px-1.5 py-0.5 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-brutal-amber text-pure-black uppercase">[SCHEDULED]</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="py-3 px-2 text-[var(--dj-fg)] font-bold">
+              <a class="px-2 py-0.5 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-brutal-amber text-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/campaign/{{ s.campaign.id }}/canaries">[CANARIES]</a>
+            </td>
+            <td class="py-3 px-2 text-[var(--dj-fg)] font-bold">
+              <a class="px-2 py-0.5 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-pure-black text-stark-white hover:bg-stark-white hover:text-pure-black dark:hover:bg-pure-black dark:hover:text-stark-white transition-all" href="/admin/campaign/{{ s.campaign.id }}/funnel">[FUNNEL]</a>
+            </td>
+            <td class="py-3 px-2 w-56">
+              <div class="w-full bg-off-white dark:bg-black border-2 border-pure-black dark:border-stark-white h-4">
+                <div id="progress-{{ s.campaign.id }}" class="bg-pure-black dark:bg-stark-white h-full transition-all" style="width: 0%"></div>
+              </div>
+              <div class="text-[10px] text-gray-600 dark:text-gray-400 mt-1 flex justify-between font-bold">
+                <span id="progtext-{{ s.campaign.id }}">-</span>
+                <span id="status-{{ s.campaign.id }}" class="uppercase font-bold text-[var(--dj-fg)]">IDLE</span>
+              </div>
+            </td>
+            <td class="py-3 px-2 text-right">
+              <div class="flex justify-end gap-2 text-xs flex-wrap">
+                <a class="px-2.5 py-1 bg-brutal-emerald text-white font-bold border-2 border-pure-black dark:border-stark-white hover:bg-pure-black hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" href="/admin/campaign/{{ s.campaign.id }}/validate">LAUNCH</a>
+                <button class="px-2.5 py-1 bg-brutal-red text-white font-bold border-2 border-pure-black dark:border-stark-white hover:bg-pure-black hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" onclick="stopCampaign({{ s.campaign.id }})">STOP</button>
+                <a class="px-2.5 py-1 bg-[var(--dj-card)] text-[var(--dj-fg)] font-bold border-2 border-pure-black dark:border-stark-white hover:bg-pure-black hover:text-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" href="{{ url_for('campaigns_admin.admin_campaign_edit', cid=s.campaign.id) }}">EDIT</a>
+                <form method="post" action="/admin/campaign/{{ s.campaign.id }}/clone" class="inline" onsubmit="return confirm('Clone this campaign?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="px-2.5 py-1 bg-[var(--dj-card)] text-[var(--dj-fg)] font-bold border-2 border-pure-black dark:border-stark-white hover:bg-pure-black hover:text-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">CLONE</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="p-8 text-center text-gray-500 dark:text-gray-400 font-mono-brutal" colspan="14">
+              [ NO CAMPAIGNS CREATED YET ]
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="mt-6 flex items-center justify-between font-mono-brutal text-sm">
+      <div class="text-[var(--dj-fg)]">
+        Page <span class="font-bold">{{ page }}</span> of <span class="font-bold">{{ total_pages }}</span>
+        <span class="text-gray-500 dark:text-gray-400">({{ total_campaigns }} campaigns)</span>
+      </div>
+      <div class="flex gap-2">
+        {% if page > 1 %}
+        {% set prev_page = page - 1 %}
+        <a class="px-3 py-1.5 border-2 border-pure-black dark:border-stark-white bg-[var(--dj-card)] text-[var(--dj-fg)] hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="{{ url_for('admin_index', page=prev_page) if prev_page > 1 else url_for('admin_index') }}">PREV</a>
+        {% else %}
+        <span class="px-3 py-1.5 border-2 border-gray-300 dark:border-gray-700 text-gray-400 cursor-not-allowed">PREV</span>
+        {% endif %}
+
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == page %}
+          <span class="px-3 py-1.5 border-2 border-pure-black dark:border-stark-white bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black font-bold">{{ p }}</span>
+          {% elif p >= page - 2 and p <= page + 2 %}
+          <a class="px-3 py-1.5 border-2 border-pure-black dark:border-stark-white bg-[var(--dj-card)] text-[var(--dj-fg)] hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="{{ url_for('admin_index', page=p) if p > 1 else url_for('admin_index') }}">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page < total_pages %}
+        <a class="px-3 py-1.5 border-2 border-pure-black dark:border-stark-white bg-[var(--dj-card)] text-[var(--dj-fg)] hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="{{ url_for('admin_index', page=page+1) }}">NEXT</a>
+        {% else %}
+        <span class="px-3 py-1.5 border-2 border-gray-300 dark:border-gray-700 text-gray-400 cursor-not-allowed">NEXT</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mt-6 flex flex-col sm:flex-row items-center gap-4 text-xs font-mono-brutal text-gray-700 dark:text-gray-400 border-2 border-pure-black dark:border-stark-white p-4 bg-off-white dark:bg-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(225,29,72,1)] font-bold">
+    <div class="flex items-center gap-2">
+      <label for="pollInterval" class="font-bold">PROGRESS POLL INTERVAL:</label>
+      <select id="pollInterval" class="bg-[var(--dj-card)] border-2 border-pure-black dark:border-stark-white text-[var(--dj-fg)] px-2 py-1 focus:ring-0 focus:outline-none">
+        <option value="1000">1 second</option>
+        <option value="3000" selected>3 seconds</option>
+        <option value="5000">5 seconds</option>
+        <option value="10000">10 seconds</option>
+        <option value="30000">30 seconds</option>
+      </select>
+    </div>
+    <div>
+      [ Live events via WebSocket. Progress polled only for active sends. ]
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const campaignIds = [
+  {% for s in stats %}{{ s.campaign.id }},{% endfor %}
+];
+const campaignMap = {};
+{% for s in stats %}
+campaignMap[{{ s.campaign.id }}] = {sent: {{ s.sent }}, opens: {{ s.opens }}, clicks: {{ s.clicks }}, creds: {{ s.creds }}, mfa: {{ s.mfa }}, flow_complete: {{ s.flow_complete }}, calendar_downloads: {{ s.calendar_downloads }}, training_started: {{ s.training_started }}, training_completed: {{ s.training_completed }}};
+{% endfor %}
+
+let ws = null;
+let progressTimer = null;
+let runningCampaigns = new Set();
+
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+async function stopCampaign(cid) {
+  if (!confirm('STOP THIS ACTIVE CAMPAIGN?')) return;
+  await fetch(`/api/campaign/${cid}/stop`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken() }
+  });
+  updateProgress(cid);
+}
+
+async function updateProgress(campaignId) {
+  try {
+    const res = await fetch(`/api/campaign/${campaignId}/progress`);
+    const data = await res.json();
+    const statusEl = document.getElementById(`status-${campaignId}`);
+    const bar = document.getElementById(`progress-${campaignId}`);
+    const text = document.getElementById(`progtext-${campaignId}`);
+
+    if (data.status === 'not_found') {
+      statusEl.textContent = 'IDLE';
+      statusEl.className = 'font-bold text-gray-500';
+      runningCampaigns.delete(campaignId);
+      return;
+    }
+
+    statusEl.textContent = data.status.toUpperCase();
+    if (data.status === 'running') {
+      statusEl.className = 'font-bold text-pure-black';
+      runningCampaigns.add(campaignId);
+    } else if (data.status === 'completed') statusEl.className = 'font-bold text-brutal-emerald';
+    else if (data.status === 'failed') statusEl.className = 'font-bold text-brutal-red';
+    else if (data.status === 'stopped') statusEl.className = 'font-bold text-brutal-amber';
+    else statusEl.className = 'font-bold text-gray-500';
+
+    if (data.status !== 'running' && data.status !== 'paused') {
+      runningCampaigns.delete(campaignId);
+    }
+
+    const total = data.total || 0;
+    const pct = total > 0 ? (data.sent / total * 100).toFixed(1) : 0;
+    bar.style.width = pct + '%';
+    text.textContent = `${data.sent}/${total} (${pct}%) · FAILED ${data.failed}`;
+  } catch (e) {
+    // ignore
+  }
+}
+
+const FIELD_MAP = {
+  sent: { id: 'sent', key: 'sent' },
+  open: { id: 'opens', key: 'opens' },
+  click: { id: 'clicks', key: 'clicks' },
+  credential_attempt: { id: 'creds', key: 'creds' },
+  mfa_attempt: { id: 'mfa', key: 'mfa' },
+  flow_complete: { id: 'flow-complete', key: 'flow_complete' },
+  calendar_download: { id: 'calendar-downloads', key: 'calendar_downloads' },
+  training_started: { id: 'training-started', key: 'training_started' },
+  training_completed: { id: 'training-completed', key: 'training_completed' }
+};
+const TOP_STAT_MAP = {
+  open: 'stat-opens',
+  click: 'stat-clicks',
+  credential_attempt: 'stat-creds',
+  mfa_attempt: 'stat-mfa',
+  flow_complete: 'stat-flow-complete',
+  calendar_download: 'stat-calendar-downloads',
+  training_started: 'stat-training-started',
+  training_completed: 'stat-training-completed'
+};
+
+function updateCampaignCell(cid, field) {
+  const mapping = FIELD_MAP[field];
+  if (!mapping || !campaignMap[cid]) return;
+  const el = document.getElementById(`${mapping.id}-${cid}`);
+  if (el) el.textContent = campaignMap[cid][mapping.key];
+}
+
+function updateTopStats(eventType) {
+  const id = TOP_STAT_MAP[eventType];
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = (parseInt(el.textContent, 10) || 0) + 1;
+}
+
+function handleLiveEvent(msg) {
+  const cid = msg.campaign_id;
+  const mapping = FIELD_MAP[msg.event_type];
+  if (cid && campaignMap[cid] && mapping) {
+    campaignMap[cid][mapping.key] += 1;
+    updateCampaignCell(cid, msg.event_type);
+  }
+  updateTopStats(msg.event_type);
+  if (msg.event_type === 'sent' || msg.event_type === 'send_failed') {
+    updateProgress(cid);
+    scheduleProgressPolling();
+  }
+}
+
+function connectWebSocket() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${protocol}//${window.location.host}/ws/events`);
+  ws.onopen = () => {
+    console.log('[DJ] WebSocket connected');
+  };
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'event') handleLiveEvent(msg);
+  };
+  ws.onclose = () => {
+    console.log('[DJ] WebSocket closed, reconnecting...');
+    setTimeout(connectWebSocket, 3000);
+  };
+  ws.onerror = (err) => {
+    console.error('[DJ] WebSocket error', err);
+  };
+}
+
+function scheduleProgressPolling() {
+  clearTimeout(progressTimer);
+  progressTimer = setTimeout(async () => {
+    await Promise.all([...runningCampaigns].map(updateProgress));
+    if (runningCampaigns.size > 0) scheduleProgressPolling();
+  }, progressInterval);
+}
+
+// Initialize brutalist Chart
+let campaignChart;
+async function initChart() {
+  const ctx = document.getElementById('campaignChart').getContext('2d');
+  const labels = [{% for s in stats %}'{{ s.campaign.name|replace("'", "\\'") }}',{% endfor %}];
+  const sentData = [{% for s in stats %}{{ s.sent }},{% endfor %}];
+  const clickData = [{% for s in stats %}{{ s.clicks }},{% endfor %}];
+
+  campaignChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'SENT',
+          data: sentData,
+          backgroundColor: '#000000',
+          borderColor: '#000000',
+          borderWidth: 2
+        },
+        {
+          label: 'CLICKS',
+          data: clickData,
+          backgroundColor: '#E11D48',
+          borderColor: '#000000',
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            font: { family: 'Space Mono', size: 11, weight: 'bold' }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(128,128,128,0.2)' },
+          ticks: { font: { family: 'Space Mono', size: 10, weight: 'bold' } }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(128,128,128,0.2)' },
+          ticks: { font: { family: 'Space Mono', size: 10, weight: 'bold' } }
+        }
+      }
+    }
+  });
+}
+
+let progressInterval = parseInt(localStorage.getItem('dj_poll_interval') || '3000', 10);
+document.getElementById('pollInterval').value = progressInterval;
+
+document.getElementById('pollInterval').addEventListener('change', (e) => {
+  progressInterval = parseInt(e.target.value, 10);
+  localStorage.setItem('dj_poll_interval', progressInterval);
+});
+
+async function initStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    document.getElementById('stat-recipients').textContent = data.recipients_count ?? '-';
+    document.getElementById('stat-opens').textContent = data.opens ?? '-';
+    document.getElementById('stat-clicks').textContent = data.clicks ?? '-';
+    document.getElementById('stat-creds').textContent = data.creds ?? '-';
+    document.getElementById('stat-mfa').textContent = data.mfa ?? '-';
+    document.getElementById('stat-flow-complete').textContent = data.flow_complete ?? '-';
+    document.getElementById('stat-calendar-downloads').textContent = data.calendar_downloads ?? '-';
+    document.getElementById('stat-training-started').textContent = data.training_started ?? '-';
+    document.getElementById('stat-training-completed').textContent = data.training_completed ?? '-';
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Initial boot
+connectWebSocket();
+initStats();
+campaignIds.forEach(updateProgress);
+initChart();
+</script>
+{% endblock %}

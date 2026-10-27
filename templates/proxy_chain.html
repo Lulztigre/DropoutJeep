@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ MULTI-HOP_PROXY_CHAIN_BUILDER ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Multi-hop SOCKS5/TLS proxy chaining for C2 & redirector infrastructure</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="brutal-card p-6 col-span-1 space-y-4">
+      <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ CHAIN_CONTROLS ]</h2>
+      <div class="flex flex-col gap-2">
+        <button onclick="checkChainHealth()" class="brutal-btn-black px-4 py-2.5 text-xs">[ CHECK ALL HOPS HEALTH ]</button>
+        <button onclick="testChainConnection()" class="brutal-btn-white px-4 py-2.5 text-xs">[ TEST CHAIN CONNECTIVITY ]</button>
+      </div>
+      <pre id="pc-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+
+    <div class="brutal-card p-6 col-span-2 space-y-4">
+      <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ CONFIGURED_HOP_SEQUENCE ]</h2>
+      <div id="hop-list" class="space-y-3 font-mono text-xs">
+        <div class="p-3 border-2 border-pure-black bg-off-white dark:bg-black flex justify-between items-center">
+          <div>
+            <span class="font-bold text-brutal-emerald">HOP 1: socks5://10.0.0.1:1080</span>
+            <p class="text-[10px] text-gray-500">Latency: 12ms · TLS: Enabled</p>
+          </div>
+          <span class="text-xs font-bold px-2 py-0.5 border border-pure-black bg-brutal-emerald text-white">HEALTHY</span>
+        </div>
+        <div class="p-3 border-2 border-pure-black bg-off-white dark:bg-black flex justify-between items-center">
+          <div>
+            <span class="font-bold text-brutal-emerald">HOP 2: socks5://10.0.0.2:1080</span>
+            <p class="text-[10px] text-gray-500">Latency: 28ms · TLS: Enabled</p>
+          </div>
+          <span class="text-xs font-bold px-2 py-0.5 border border-pure-black bg-brutal-emerald text-white">HEALTHY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function checkChainHealth() {
+    const out = document.getElementById('pc-out');
+    out.classList.remove('hidden');
+    out.textContent = "Checking latency and health of all hops...";
+    try {
+      const res = await fetch('/admin/proxy-chain/health');
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+
+  async function testChainConnection() {
+    const out = document.getElementById('pc-out');
+    out.classList.remove('hidden');
+    out.textContent = "Testing end-to-end chain connection...";
+    try {
+      const res = await fetch('/admin/proxy-chain/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: '127.0.0.1', port: 80 })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+</script>
+{% endblock %}

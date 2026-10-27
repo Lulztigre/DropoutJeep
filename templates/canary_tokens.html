@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+
+  <!-- Header -->
+  <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ CANARY_TOKENS ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Campaign: {{ campaign.name }} (#{{ campaign.id }})</p>
+    </div>
+  </header>
+
+  <!-- Create Form -->
+  <section class="border-4 border-pure-black bg-stark-white p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ CREATE_CANARY ]</h2>
+    <form method="post" action="/admin/campaign/{{ campaign.id }}/canaries" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="name" class="block text-xs font-bold text-pure-black mb-1.5">NAME <span class="text-brutal-red">*</span></label>
+          <input type="text" id="name" name="name" required
+                 class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                 placeholder="Leak detector #1">
+        </div>
+        <div>
+          <label for="token_type" class="block text-xs font-bold text-pure-black mb-1.5">TOKEN TYPE</label>
+          <select id="token_type" name="token_type"
+                  class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+            <option value="url">URL (redirects when visited)</option>
+            <option value="image">Image (1&times;1 pixel)</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label for="redirect_url" class="block text-xs font-bold text-pure-black mb-1.5">REDIRECT URL (for URL canaries)</label>
+          <input type="url" id="redirect_url" name="redirect_url"
+                 class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                 placeholder="https://en.wikipedia.org/wiki/Phishing">
+        </div>
+        <div class="md:col-span-2">
+          <label for="notes" class="block text-xs font-bold text-pure-black mb-1.5">NOTES</label>
+          <input type="text" id="notes" name="notes"
+                 class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                 placeholder="Placed in finance-dept-only template">
+        </div>
+      </div>
+      <div class="pt-2">
+        <button type="submit" class="px-6 py-2.5 brutal-btn-black text-xs tracking-wider font-extrabold">[ CREATE CANARY ]</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Usage Hint -->
+  <section class="border-4 border-pure-black bg-off-white p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <h2 class="text-lg font-black text-pure-black mb-2 uppercase">[ TEMPLATE_PLACEHOLDERS ]</h2>
+    <p class="text-xs text-pure-black font-bold mb-2">Paste these placeholders into campaign email or landing HTML. The first active canary of each type is substituted automatically.</p>
+    <div class="flex flex-wrap gap-2 text-xs">
+      <code class="border border-pure-black bg-stark-white px-2 py-1">{% raw %}{{CANARY_URL}}{% endraw %}</code>
+      <code class="border border-pure-black bg-stark-white px-2 py-1">{% raw %}{{CANARY_IMAGE}}{% endraw %}</code>
+    </div>
+  </section>
+
+  <!-- Canary List -->
+  <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ ACTIVE_CANARIES ]</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b-2 border-pure-black text-gray-600 text-xs">
+            <th class="py-3 px-2 font-bold">NAME</th>
+            <th class="py-3 px-2 font-bold">TYPE</th>
+            <th class="py-3 px-2 font-bold">STATUS</th>
+            <th class="py-3 px-2 font-bold">TOKEN URL</th>
+            <th class="py-3 px-2 font-bold">TRIGGERED</th>
+            <th class="py-3 px-2 font-bold">NOTES</th>
+            <th class="py-3 px-2 text-right font-bold">ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in canaries %}
+          {% set canary_url = base_url ~ '/canary/' ~ c.token %}
+          {% if c.token_type == 'image' %}
+            {% set canary_url = canary_url ~ '.gif' %}
+          {% endif %}
+          <tr class="border-b border-off-white hover:bg-off-white transition-colors">
+            <td class="py-3 px-2 font-extrabold">{{ c.name }}</td>
+            <td class="py-3 px-2 uppercase">{{ c.token_type }}</td>
+            <td class="py-3 px-2">
+              {% if c.status == 'active' %}
+                <span class="px-1.5 py-0.5 text-[10px] font-bold border border-pure-black bg-brutal-emerald text-white uppercase">ACTIVE</span>
+              {% elif c.status == 'triggered' %}
+                <span class="px-1.5 py-0.5 text-[10px] font-bold border border-pure-black bg-brutal-red text-white uppercase">TRIGGERED</span>
+              {% else %}
+                <span class="px-1.5 py-0.5 text-[10px] font-bold border border-pure-black bg-off-white text-pure-black uppercase">{{ c.status|upper }}</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-2 break-all font-mono text-xs">
+              <a href="{{ canary_url }}" target="_blank" class="text-brutal-red hover:underline">{{ canary_url }}</a>
+            </td>
+            <td class="py-3 px-2 text-xs">
+              {% if c.triggered_at %}
+                {{ c.triggered_at.strftime('%Y-%m-%d %H:%M UTC') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="py-3 px-2 text-xs text-gray-600">{{ c.notes or '-' }}</td>
+            <td class="py-3 px-2 text-right">
+              <form method="post" action="/admin/canary/{{ c.id }}/delete" class="inline" onsubmit="return confirm('Delete this canary?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="px-2.5 py-1 bg-brutal-red text-white font-bold border-2 border-pure-black hover:bg-pure-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">DELETE</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="p-8 text-center text-gray-500 font-bold" colspan="7">[ NO CANARY TOKENS YET ]</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

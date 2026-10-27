@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Security Awareness Training</title>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #F4F4F6; color: #000; margin: 0; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .banner { background: #000; color: #fff; padding: 16px 20px; font-weight: 800; }
+    .notice { background: #fff; border: 3px solid #000; padding: 20px; margin: 20px 0; box-shadow: 4px 4px 0 0 #000; }
+    iframe { width: 100%; height: 600px; border: 3px solid #000; background: #fff; }
+    .fallback { margin-top: 12px; font-size: 12px; }
+    .fallback a { color: #E11D48; font-weight: bold; }
+    button { background: #000; color: #fff; border: 2px solid #000; padding: 12px 24px; font-weight: 800; cursor: pointer; margin-top: 12px; }
+    button:hover { background: #fff; color: #000; }
+    .complete-msg { display: none; margin-top: 12px; font-weight: bold; color: #10B981; }
+  </style>
+</head>
+<body>
+  <div class="banner">SIMULATED COMPROMISE DETECTED — COMPLETE THE TRAINING BELOW</div>
+  <div class="container">
+    <div class="notice">
+      <p>You interacted with an authorized phishing simulation. Your actions have been recorded for awareness training only.</p>
+      <p>Please review the training content below. You will be redirected once the session is marked complete.</p>
+    </div>
+
+    {% if training_url %}
+    <iframe src="{{ training_url }}" title="Security awareness training" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    <p class="fallback">If the training does not load, <a href="{{ training_url }}" target="_blank" rel="noopener noreferrer">open it in a new tab</a>.</p>
+    {% else %}
+    <div class="notice">No training URL was configured for this campaign.</div>
+    {% endif %}
+
+    <button id="completeBtn" onclick="markComplete()">MARK TRAINING COMPLETE</button>
+    <div id="completeMsg" class="complete-msg">Training completed — redirecting...</div>
+  </div>
+
+  <script>
+    const token = '{{ token }}';
+    const redirectUrl = '{{ redirect_url }}';
+    const durationSeconds = parseInt('{{ duration_seconds }}', 10) || 30;
+    let completed = false;
+
+    async function markComplete() {
+      if (completed) return;
+      completed = true;
+      document.getElementById('completeBtn').disabled = true;
+      try {
+        const res = await fetch(`/landing/${token}/training/complete`, { method: 'POST' });
+        const data = await res.json();
+        document.getElementById('completeMsg').style.display = 'block';
+        setTimeout(() => {
+          window.location.href = data.redirect_url || redirectUrl;
+        }, 1500);
+      } catch (e) {
+        completed = false;
+        document.getElementById('completeBtn').disabled = false;
+        alert('Could not record completion. Please try again.');
+      }
+    }
+
+    // Auto-complete after the configured duration as a fallback.
+    setTimeout(() => {
+      if (!completed) markComplete();
+    }, durationSeconds * 1000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ SYSTEM_SETTINGS ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Configure runtime values. Settings override environment variables.</p>
+  </header>
+
+  <form action="/admin/settings" method="post" class="space-y-8 text-sm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- General -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ GENERAL ]</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-pure-black mb-1">BASE URL</label>
+          <input type="url" name="base_url" value="{{ settings.get('base_url', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="https://dropoutjeep.local">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">EVENT RETENTION (DAYS)</label>
+          <input type="number" name="retention_days" value="{{ settings.get('retention_days', '') }}" min="1" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="90">
+        </div>
+      </div>
+    </section>
+
+    <!-- Mail Delivery -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ MAIL DELIVERY ]</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SMTP FALLBACK HOST</label>
+          <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="smtp.example.com">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SMTP FALLBACK PORT</label>
+          <input type="number" name="smtp_port" value="{{ settings.get('smtp_port', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="587">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-pure-black mb-1">RETURN-PATH DOMAIN</label>
+          <input type="text" name="return_path" value="{{ settings.get('return_path', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="bounce.dropoutjeep.local">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">DIALER POOL SIZE</label>
+          <input type="number" name="dialer_pool_size" value="{{ settings.get('dialer_pool_size', '') }}" min="1" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="2">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">USE ENTERPRISE MAILER</label>
+          <select name="use_enterprise_mailer" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+            <option value="" {% if not settings.get('use_enterprise_mailer') %}selected{% endif %}>Default (env)</option>
+            <option value="1" {% if settings.get('use_enterprise_mailer') == '1' %}selected{% endif %}>Enabled</option>
+            <option value="0" {% if settings.get('use_enterprise_mailer') == '0' %}selected{% endif %}>Disabled</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">DEFAULT DKIM SELECTOR</label>
+          <input type="text" name="dkim_selector" value="{{ settings.get('dkim_selector', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="default">
+        </div>
+      </div>
+    </section>
+
+    <!-- IMAP / Auto-Reply -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ IMAP / AUTO-REPLY ]</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP HOST</label>
+          <input type="text" name="imap_host" value="{{ settings.get('imap_host', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="imap.example.com">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP PORT</label>
+          <input type="number" name="imap_port" value="{{ settings.get('imap_port', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="993">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP USERNAME</label>
+          <input type="text" name="imap_user" value="{{ settings.get('imap_user', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="replies@example.com">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP PASSWORD</label>
+          <input type="password" name="imap_pass" value="{{ settings.get('imap_pass', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+        </div>
+      </div>
+    </section>
+
+    <!-- Reputation & Integrations -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ REPUTATION & INTEGRATIONS ]</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">VIRUSTOTAL API KEY</label>
+          <input type="password" name="virustotal_api_key" value="{{ settings.get('virustotal_api_key', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IPAPI API KEY</label>
+          <input type="password" name="ipapi_api_key" value="{{ settings.get('ipapi_api_key', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+        </div>
+      </div>
+    </section>
+
+    <!-- Limits -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ LIMITS ]</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">BULK IMPORT MAX ROWS</label>
+          <input type="number" name="bulk_import_max_rows" value="{{ settings.get('bulk_import_max_rows', '') }}" min="1" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="10000">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SHOW PLUGINS UI</label>
+          <select name="enable_plugins_ui" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+            <option value="" {% if not settings.get('enable_plugins_ui') %}selected{% endif %}>Default (env)</option>
+            <option value="1" {% if settings.get('enable_plugins_ui') == '1' %}selected{% endif %}>Enabled</option>
+            <option value="0" {% if settings.get('enable_plugins_ui') == '0' %}selected{% endif %}>Disabled</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <button class="w-full py-3 brutal-btn-black text-xs font-extrabold tracking-wider" type="submit">
+      [ SAVE SYSTEM SETTINGS ]
+    </button>
+  </form>
+</div>
+{% endblock %}

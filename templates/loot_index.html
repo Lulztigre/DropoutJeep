@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    {% if campaign %}
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+    {% else %}
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+    {% endif %}
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">
+      {% if campaign %}LOOT: {{ campaign.name }}{% else %}LOOT VAULT{% endif %}
+    </h1>
+    {% if campaign %}
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+    {% endif %}
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      Stolen credentials and secrets received via <code>/loot/&lt;token&gt;</code>. Data is encrypted at rest and decrypted only on this page.
+    </p>
+  </div>
+
+  <div class="brutal-card p-4 mb-6">
+    <form method="get" class="flex flex-wrap items-center gap-3 font-mono-brutal text-sm">
+      <label for="category" class="font-bold">FILTER CATEGORY:</label>
+      <select id="category" name="category" class="border-2 border-pure-black dark:border-stark-white bg-[var(--dj-card)] px-3 py-1">
+        <option value="" {% if not active_category %}selected{% endif %}>ALL</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if active_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="brutal-btn-black px-3 py-1 text-xs">APPLY</button>
+      {% if active_category %}
+      <a href="{{ url_for(request.endpoint, **({'cid': campaign.id} if campaign else {})) }}" class="brutal-btn-white px-3 py-1 text-xs">CLEAR</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="brutal-card p-6">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[900px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Captured At</th>
+            <th class="text-left py-2">Campaign</th>
+            <th class="text-left py-2">Recipient</th>
+            <th class="text-left py-2">Category</th>
+            <th class="text-left py-2">Source</th>
+            <th class="text-left py-2">IP</th>
+            <th class="text-left py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2 whitespace-nowrap">{{ item.captured_at.strftime('%Y-%m-%d %H:%M:%S') if item.captured_at else '-' }}</td>
+            <td class="py-2">
+              {% if item.campaign %}
+              <a href="{{ url_for('loot.admin_campaign_loot', cid=item.campaign_id) }}" class="underline">{{ item.campaign.name }}</a>
+              {% else %}-{% endif %}
+            </td>
+            <td class="py-2">{{ item.recipient.email if item.recipient else '-' }}</td>
+            <td class="py-2"><span class="px-2 py-0.5 border border-pure-black dark:border-stark-white text-xs">{{ item.category }}</span></td>
+            <td class="py-2">{{ item.source }}</td>
+            <td class="py-2">{{ item.ip or '-' }}</td>
+            <td class="py-2">
+              <a href="{{ url_for('loot.admin_loot_detail', item_id=item.id) }}" class="brutal-btn-black px-2 py-1 text-xs">VIEW</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="py-4 text-gray-500 dark:text-gray-400">No loot received yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="flex items-center justify-between mt-6 font-mono-brutal text-xs">
+      <div>
+        Page {{ pagination.page }} of {{ pagination.pages }}
+      </div>
+      <div class="flex gap-2">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for(request.endpoint, page=pagination.prev_num, category=active_category, **({'cid': campaign.id} if campaign else {})) }}" class="brutal-btn-white px-3 py-1">PREV</a>
+        {% endif %}
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if p %}
+            {% if p == pagination.page %}
+            <span class="px-3 py-1 border-2 border-pure-black dark:border-stark-white bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black">{{ p }}</span>
+            {% else %}
+            <a href="{{ url_for(request.endpoint, page=p, category=active_category, **({'cid': campaign.id} if campaign else {})) }}" class="brutal-btn-white px-3 py-1">{{ p }}</a>
+            {% endif %}
+          {% else %}
+            <span class="px-2 py-1">...</span>
+          {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+        <a href="{{ url_for(request.endpoint, page=pagination.next_num, category=active_category, **({'cid': campaign.id} if campaign else {})) }}" class="brutal-btn-white px-3 py-1">NEXT</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

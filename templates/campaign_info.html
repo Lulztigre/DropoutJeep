@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/campaigns" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+      </svg>
+      [ BACK TO CAMPAIGN LIST ]
+    </a>
+  </div>
+
+  <!-- Header -->
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold font-mono-brutal tracking-tight text-[var(--dj-fg)] mb-2">[ CAMPAIGN_INTEL ]</h1>
+      <p class="text-sm font-mono-brutal text-brutal-red font-bold">&gt; {{ campaign.name }}</p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <a href="{{ url_for('campaigns_admin.admin_campaign_edit', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-black font-mono-brutal text-xs">EDIT</a>
+      <a href="{{ url_for('admin_index') }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">DASHBOARD</a>
+      <a href="{{ url_for('admin_campaign_analytics', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">ANALYTICS</a>
+      <a href="{{ url_for('admin_campaign_funnel', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">FUNNEL</a>
+      {% if campaign.flow_type == 'reverse_proxy' %}
+      <a href="{{ url_for('admin_campaign_cookies', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">COOKIES</a>
+      <a href="{{ url_for('admin_campaign_credentials', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">CREDS</a>
+      <a href="{{ url_for('admin_oauth_tokens', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">OAUTH</a>
+      <a href="{{ url_for('admin_saml_captures', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">SAML</a>
+      {% endif %}
+      {% if campaign.html_smuggling_enabled %}
+      <a href="{{ url_for('admin_payloads', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">PAYLOADS</a>
+      {% endif %}
+      {% if campaign.get_flow_config().get('qr_code_enabled') %}
+      <a href="{{ url_for('campaigns_admin.admin_campaign_qr', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">QR</a>
+      {% endif %}
+      <a href="{{ url_for('admin_campaign_validate', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-red font-mono-brutal text-xs">VALIDATE</a>
+    </div>
+  </header>
+
+  <!-- Campaign Identity -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">Campaign ID</div>
+      <div class="font-mono-brutal text-2xl font-extrabold">#{{ campaign.id }}</div>
+    </div>
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">Created</div>
+      <div class="font-mono-brutal text-lg font-bold">{{ campaign.created_at.strftime('%Y-%m-%d %H:%M:%S') if campaign.created_at else '-' }}</div>
+    </div>
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">Flow Type</div>
+      <div class="font-mono-brutal text-lg font-bold">{{ campaign.flow_type or 'single_step' }}</div>
+    </div>
+  </div>
+
+  <!-- Funnel Overview -->
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ FUNNEL ]</h2>
+    <div class="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+      {% set funnel_items = [
+        ('TOTAL', funnel[0].count if funnel|length > 0 else 0, 'brutal-emerald'),
+        ('SENT', funnel[1].count if funnel|length > 1 else 0, 'brutal-emerald'),
+        ('DELIVERED', funnel[2].count if funnel|length > 2 else 0, 'brutal-emerald'),
+        ('OPENED', event_counts.get('open', 0), 'brutal-emerald'),
+        ('CLICKED', event_counts.get('click', 0), 'brutal-amber'),
+        ('VISITED', event_counts.get('visit', 0), 'brutal-amber'),
+        ('CREDS', event_counts.get('credential_attempt', 0), 'brutal-red'),
+        ('MFA', event_counts.get('mfa_attempt', 0), 'brutal-red'),
+        ('COMPLETE', event_counts.get('flow_complete', 0), 'brutal-emerald'),
+        ('TRAINING', event_counts.get('training_completed', 0), 'brutal-emerald')
+      ] %}
+      {% for label, count, color in funnel_items %}
+      <div class="border-2 border-pure-black dark:border-stark-white p-2 text-center">
+        <div class="font-mono-brutal text-[10px] text-gray-500 uppercase">{{ label }}</div>
+        <div class="font-mono-brutal text-xl font-extrabold text-{{ color }}">{{ count }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Campaign Config -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Email Config -->
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+      <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ EMAIL_CONFIG ]</h2>
+      <div class="space-y-2 font-mono-brutal text-xs">
+        <div class="flex justify-between"><span class="text-gray-500">Subject:</span><span class="font-bold">{{ campaign.subject or '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Sending Profile:</span><span class="font-bold">{{ campaign.sending_profile.name if campaign.sending_profile else 'none' }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">From (Subsidiary):</span><span class="font-bold">{{ campaign.sending_profile.subsidiary.name if campaign.sending_profile and campaign.sending_profile.subsidiary else '-' }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Schedule:</span>
+          {% if campaign.schedule_enabled %}
+            <span class="font-bold text-brutal-amber">ENABLED</span>
+          {% else %}
+            <span class="text-gray-500">DISABLED</span>
+          {% endif %}
+        </div>
+        {% if campaign.schedule_cron %}
+        <div class="flex justify-between"><span class="text-gray-500">Cron:</span><span class="font-bold">{{ campaign.schedule_cron }}</span></div>
+        {% endif %}
+        {% if campaign.scheduled_at %}
+        <div class="flex justify-between"><span class="text-gray-500">Scheduled At:</span><span class="font-bold">{{ campaign.scheduled_at }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Flow Config -->
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+      <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ FLOW_CONFIG ]</h2>
+      <div class="space-y-2 font-mono-brutal text-xs">
+        <div class="flex justify-between"><span class="text-gray-500">Redirect URL:</span><span class="font-bold break-all">{{ flow_config.get('redirect_url', '-') }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Success Message:</span><span class="font-bold">{{ (flow_config.get('success_message', '-') or '-')[:60] }}</span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Training:</span>
+          {% if flow_config.get('training_enabled') %}
+            <span class="font-bold text-brutal-emerald">ENABLED</span>
+          {% else %}
+            <span class="text-gray-500">DISABLED</span>
+          {% endif %}
+        </div>
+        <div class="flex justify-between"><span class="text-gray-500">MFA Title:</span><span class="font-bold">{{ flow_config.get('mfa_title', '-') }}</span></div>
+      </div>
+      {% if flow_config.get('oauth') %}
+      <div class="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+        <div class="font-mono-brutal text-xs font-bold text-brutal-amber mb-2">OAUTH2 CONFIG</div>
+        <div class="space-y-1 font-mono-brutal text-xs">
+          <div class="flex justify-between"><span class="text-gray-500">Provider:</span><span class="font-bold">{{ flow_config.oauth.get('provider', '-') }}</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Auto Exchange:</span><span class="font-bold">{{ 'YES' if flow_config.oauth.get('auto_exchange') else 'NO' }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+      {% if flow_config.get('saml') %}
+      <div class="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+        <div class="font-mono-brutal text-xs font-bold text-brutal-amber mb-2">SAML CONFIG</div>
+        <div class="space-y-1 font-mono-brutal text-xs">
+          <div class="flex justify-between"><span class="text-gray-500">Real ACS URL:</span><span class="font-bold break-all">{{ flow_config.saml.get('real_acs_url', '-') }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Captured Data Summary -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <a href="{{ url_for('admin_campaign_credentials', cid=campaign.id) }}" class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] transition-shadow">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">Credentials</div>
+      <div class="font-mono-brutal text-3xl font-extrabold text-brutal-red">{{ credentials | length }}</div>
+    </a>
+    <a href="{{ url_for('admin_campaign_cookies', cid=campaign.id) }}" class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] transition-shadow">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">Cookies</div>
+      <div class="font-mono-brutal text-3xl font-extrabold text-brutal-amber">{{ cookies | length }}</div>
+      {% set valid_cookies = cookies | selectattr('is_valid', 'equalto', true) | list %}
+      {% if valid_cookies %}
+      <div class="font-mono-brutal text-xs text-brutal-emerald">{{ valid_cookies | length }} valid</div>
+      {% endif %}
+    </a>
+    <a href="{{ url_for('admin_oauth_tokens', cid=campaign.id) }}" class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] transition-shadow">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">OAuth Tokens</div>
+      <div class="font-mono-brutal text-3xl font-extrabold text-brutal-emerald">{{ oauth_tokens | length }}</div>
+    </a>
+    <a href="{{ url_for('admin_saml_captures', cid=campaign.id) }}" class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] transition-shadow">
+      <div class="font-mono-brutal text-xs text-gray-500 uppercase">SAML Captures</div>
+      <div class="font-mono-brutal text-3xl font-extrabold text-brutal-emerald">{{ saml_captures | length }}</div>
+    </a>
+  </div>
+
+  <!-- Recipients -->
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] uppercase">[ RECIPIENTS ] &mdash; {{ recipients | length }}</h2>
+      <div class="flex gap-3 text-xs font-mono-brutal items-center">
+        <span>HIGH_RISK: <span class="font-bold text-brutal-red">{{ risk.get('high_risk_count', 0) }}</span></span>
+        <span>AVG_RISK: <span class="font-bold text-brutal-amber">{{ risk.get('avg_score', 0) }}</span></span>
+        <a href="{{ url_for('recipients_page', campaign_id=campaign.id) }}" class="px-3 py-1 border-2 border-pure-black dark:border-stark-white bg-[var(--dj-card)] hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">[ IMPORT RECIPIENTS ]</a>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-xs">
+        <thead>
+          <tr class="border-b-2 border-pure-black dark:border-stark-white">
+            <th class="p-2 uppercase">Email</th>
+            <th class="p-2 uppercase">Token</th>
+            <th class="p-2 uppercase">Sent</th>
+            <th class="p-2 uppercase">Disposition</th>
+            <th class="p-2 uppercase">Risk</th>
+            <th class="p-2 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recipients[:30] %}
+          <tr class="border-b border-gray-200 dark:border-gray-800">
+            <td class="p-2 font-bold">{{ r.email }}</td>
+            <td class="p-2 text-gray-500">{{ r.token[:12] if r.token else '-' }}...</td>
+            <td class="p-2">{{ 'YES' if r.sent_at else 'NO' }}</td>
+            <td class="p-2">{{ r.disposition or '-' }}</td>
+            <td class="p-2">
+              {% set rscore_obj = risk_map.get(r.id, {}) %}
+              {% set rscore = rscore_obj.get('score', 0) if rscore_obj is mapping else 0 %}
+              {% if rscore >= 7 %}
+                <span class="text-brutal-red font-bold">{{ rscore }}</span>
+              {% elif rscore >= 4 %}
+                <span class="text-brutal-amber font-bold">{{ rscore }}</span>
+              {% else %}
+                <span class="text-brutal-emerald font-bold">{{ rscore }}</span>
+              {% endif %}
+            </td>
+            <td class="p-2">
+              <a href="{{ url_for('admin_recipient_timeline', cid=campaign.id, rid=r.id) }}" class="text-brutal-red underline hover:no-underline">TIMELINE</a>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if recipients | length > 30 %}
+          <tr>
+            <td colspan="6" class="p-2 text-center text-gray-500">
+              Showing 30 of {{ recipients | length }} recipients.
+              <a href="{{ url_for('recipients_page') }}" class="text-brutal-red underline">View all recipients</a>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Credentials -->
+  {% if credentials %}
+  <div class="border-4 border-brutal-red bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-brutal-red uppercase">[ CAPTURED_CREDENTIALS ] &mdash; {{ credentials | length }}</h2>
+      <a href="{{ url_for('admin_campaign_credentials', cid=campaign.id) }}" class="px-3 py-1 brutal-btn-white font-mono-brutal text-xs">VIEW ALL</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-xs">
+        <thead>
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <th class="p-1 uppercase">Time</th>
+            <th class="p-1 uppercase">Type</th>
+            <th class="p-1 uppercase">Field</th>
+            <th class="p-1 uppercase">Username</th>
+            <th class="p-1 uppercase">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cred in credentials[:10] %}
+          <tr class="border-b border-gray-200 dark:border-gray-800">
+            <td class="p-1">{{ cred.captured_at.strftime('%m-%d %H:%M') if cred.captured_at else '-' }}</td>
+            <td class="p-1"><span class="px-1 border border-brutal-red text-brutal-red">{{ cred.credential_type }}</span></td>
+            <td class="p-1">{{ cred.field_name }}</td>
+            <td class="p-1">{{ cred.username or '-' }}</td>
+            <td class="p-1 text-gray-500">***</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Recent Cookies -->
+  {% if cookies %}
+  <div class="border-4 border-brutal-amber bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(245,158,11,1)]">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-brutal-amber uppercase">[ CAPTURED_COOKIES ] &mdash; {{ cookies | length }}</h2>
+      <a href="{{ url_for('admin_campaign_cookies', cid=campaign.id) }}" class="px-3 py-1 brutal-btn-white font-mono-brutal text-xs">VIEW ALL</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-xs">
+        <thead>
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <th class="p-1 uppercase">Time</th>
+            <th class="p-1 uppercase">Name</th>
+            <th class="p-1 uppercase">Domain</th>
+            <th class="p-1 uppercase">Source</th>
+            <th class="p-1 uppercase">Valid</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in cookies[:10] %}
+          <tr class="border-b border-gray-200 dark:border-gray-800">
+            <td class="p-1">{{ c.captured_at.strftime('%m-%d %H:%M') if c.captured_at else '-' }}</td>
+            <td class="p-1 font-bold">{{ c.cookie_name }}</td>
+            <td class="p-1">{{ c.cookie_domain or '-' }}</td>
+            <td class="p-1">{{ c.source }}</td>
+            <td class="p-1">
+              {% if c.is_valid is none %}-{% elif c.is_valid %}<span class="text-brutal-emerald">VALID</span>{% else %}<span class="text-brutal-red">INVALID</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Payloads -->
+  {% if payloads %}
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] uppercase">[ PAYLOADS ] &mdash; {{ payloads | length }}</h2>
+      <a href="{{ url_for('admin_payloads', cid=campaign.id) }}" class="px-3 py-1 brutal-btn-white font-mono-brutal text-xs">MANAGE</a>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      {% for p in payloads %}
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal font-bold text-xs">{{ p.name }}</div>
+        <div class="font-mono-brutal text-xs text-gray-500">{{ p.filename }} ({{ p.extension | upper }})</div>
+        {% if p.per_recipient %}
+          <div class="font-mono-brutal text-xs text-brutal-amber mt-1">POLYMORPHIC</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Event Breakdown -->
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ EVENT_BREAKDOWN ]</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {% for etype, count in event_counts.items() %}
+      {% if count > 0 %}
+      <div class="border border-gray-300 dark:border-gray-700 p-2">
+        <div class="font-mono-brutal text-[10px] text-gray-500 uppercase">{{ etype | replace('_', ' ') }}</div>
+        <div class="font-mono-brutal text-lg font-extrabold">{{ count }}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

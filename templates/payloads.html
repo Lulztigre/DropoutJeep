@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">PAYLOAD MANAGEMENT</h1>
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-2">{{ campaign.name }}</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      Manage staged payloads for this campaign. Payloads are served via HTML smuggling droppers
+      and can be flagged for per-recipient polymorphic delivery (unique bytes per target).
+      Allowed extensions: <code>docx, xlsx, pptx, hta, lnk, bin</code>.
+    </p>
+  </div>
+
+  <!-- Upload Form -->
+  <div class="brutal-card p-6 mb-8">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">Upload New Payload</h3>
+    <form id="upload-form" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-mono-brutal text-sm font-bold mb-1">Payload Name</label>
+          <input type="text" name="name" id="payload-name" required
+                 placeholder="e.g. Q3 Financial Report"
+                 class="w-full p-2 border-2 border-pure-black focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-mono-brutal text-sm font-bold mb-1">File</label>
+          <input type="file" name="file" id="payload-file" required
+                 accept=".docx,.xlsx,.pptx,.hta,.lnk,.bin"
+                 class="w-full p-2 border-2 border-pure-black focus:outline-none">
+        </div>
+      </div>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="per_recipient" id="per-recipient" class="w-4 h-4 border-2 border-pure-black">
+        <span class="font-mono-brutal text-sm font-bold">Polymorphic (unique bytes per recipient)</span>
+      </label>
+      <p class="text-xs text-gray-500">
+        When enabled, each recipient gets a byte-unique variant of the payload to evade signature-based detection.
+      </p>
+      <div class="flex items-center gap-4">
+        <button type="submit" class="brutal-btn-black px-6 py-2">UPLOAD PAYLOAD</button>
+        <span id="upload-status" class="font-mono-brutal text-sm"></span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Payloads List -->
+  <div class="brutal-card p-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">Staged Payloads</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[700px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">ID</th>
+            <th class="text-left py-2">Name</th>
+            <th class="text-left py-2">Filename</th>
+            <th class="text-left py-2">Extension</th>
+            <th class="text-left py-2">MIME Type</th>
+            <th class="text-left py-2">Polymorphic</th>
+            <th class="text-left py-2">Created</th>
+            <th class="text-left py-2">Dropper URL</th>
+            <th class="text-left py-2">Polymorph</th>
+          </tr>
+        </thead>
+        <tbody id="payloads-body">
+          {% for p in payloads %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2">#{{ p.id }}</td>
+            <td class="py-2 font-bold">{{ p.name }}</td>
+            <td class="py-2">{{ p.filename }}</td>
+            <td class="py-2">{{ p.extension | upper }}</td>
+            <td class="py-2 text-xs break-all max-w-xs">{{ p.mime_type }}</td>
+            <td class="py-2">
+              {% if p.per_recipient %}
+                <span class="text-brutal-emerald font-bold">YES</span>
+              {% else %}
+                <span class="text-gray-500">NO</span>
+              {% endif %}
+            </td>
+            <td class="py-2 text-xs">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '-' }}</td>
+            <td class="py-2">
+              <code class="text-xs bg-off-white dark:bg-black px-1 py-0.5 border border-gray-300 dark:border-gray-700">
+                /payload/{{ p.id }}/TOKEN
+              </code>
+            </td>
+            <td class="py-2">
+              {% if p.per_recipient %}
+              <button onclick="previewPolymorph({{ p.id }})" class="px-2 py-1 border-2 border-brutal-amber text-brutal-amber font-bold hover:bg-brutal-amber hover:text-white transition-all font-mono-brutal text-xs">
+                PREVIEW
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" class="py-4 text-gray-500 dark:text-gray-400">
+              No payloads staged yet. Upload a file above to get started.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('upload-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var status = document.getElementById('upload-status');
+  var form = new FormData(this);
+  status.textContent = 'UPLOADING...';
+  status.className = 'font-mono-brutal text-sm text-brutal-amber';
+  try {
+    var resp = await fetch('/api/campaign/{{ campaign.id }}/payloads', {
+      method: 'POST',
+      body: form,
+      headers: { 'X-CSRFToken': form.get('csrf_token') },
+      credentials: 'same-origin'
+    });
+    var data = await resp.json();
+    if (resp.ok) {
+      status.textContent = '[SUCCESS] Payload uploaded: ' + data.filename;
+      status.className = 'font-mono-brutal text-sm text-brutal-emerald';
+      setTimeout(function() { window.location.reload(); }, 1000);
+    } else {
+      status.textContent = '[ERROR] ' + (data.error || 'Upload failed');
+      status.className = 'font-mono-brutal text-sm text-brutal-red';
+    }
+  } catch(err) {
+    status.textContent = '[ERROR] Network error';
+    status.className = 'font-mono-brutal text-sm text-brutal-red';
+  }
+});
+
+async function previewPolymorph(payloadId) {
+  try {
+    var resp = await fetch('/admin/campaign/{{ campaign.id }}/payloads/' + payloadId + '/preview');
+    var data = await resp.json();
+    var msg = 'POLYMORPHIC PREVIEW\\n\\n';
+    msg += 'File: ' + data.filename + '\\n';
+    msg += 'Extension: ' + data.extension.toUpperCase() + '\\n';
+    msg += 'Per-Recipient: ' + (data.per_recipient ? 'YES' : 'NO') + '\\n\\n';
+    msg += 'Sample Variants:\\n';
+    msg += '---\\n';
+    data.variants.forEach(function(v) {
+      msg += 'Token: ' + v.token + '\\n';
+      msg += '  Marker: ' + v.marker + '\\n';
+      msg += '  Original: ' + v.size_original + ' bytes\\n';
+      msg += '  Polymorphed: ' + v.size_polymorphed + ' bytes (delta: ' + (v.delta >= 0 ? '+' : '') + v.delta + ')\\n\\n';
+    });
+    alert(msg);
+  } catch(err) {
+    alert('Failed to load polymorph preview: ' + err.message);
+  }
+}
+</script>
+{% endblock %}

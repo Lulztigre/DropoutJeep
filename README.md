@@ -1,6 +1,6 @@
 # DropoutJeep
 
-A phishing simulation and security awareness testing platform - I built this out of necessity, frankly i was tired of always asking to be whitelisted per red team exercise. It runs email campaigns with tracking, builds fake landing pages, and can proxy real websites through a transparent MITM (Man-in-the-Middle) engine to capture credentials and MFA tokens.
+A phishing simulation and security awareness testing platform. It runs email campaigns with tracking, builds fake landing pages, and can proxy real websites through a transparent MITM (Man-in-the-Middle) engine to capture credentials and MFA tokens.
 
 **Use only for authorized internal security awareness testing.** Get written approval before running any campaigns.
 
@@ -59,7 +59,6 @@ DropoutJeep does three things:
 3. **Reverse proxy MITM** - Proxy a real website through DropoutJeep and modify it on the fly. The victim sees the real site, but form submissions go through your server first.
 
 ---
-<img width="964" height="660" alt="image" src="https://github.com/user-attachments/assets/0d2063b4-b679-4e47-8cd2-2fb4a418eae1" />
 
 ## Quick Start
 
@@ -186,9 +185,6 @@ A subsidiary defines who the email appears to come from.
    - **DKIM private key** - Optional. Click "Generate" to create a new keypair
 3. Save
 
-<img width="680" height="581" alt="image" src="https://github.com/user-attachments/assets/329ffd6b-ec74-4085-a15c-0c41ed63d962" />
-
-
 ### 2. Create a Sending Profile
 
 A sending profile tells DropoutJeep how to send emails (SMTP settings).
@@ -204,7 +200,7 @@ A sending profile tells DropoutJeep how to send emails (SMTP settings).
    - **Subsidiary** - Select the subsidiary you just created
 3. Click **Validate SMTP** to test the connection
 4. Save
-   
+
 ### 3. Build the Email
 
 1. Go to `/admin/campaign/new`
@@ -230,7 +226,6 @@ A sending profile tells DropoutJeep how to send emails (SMTP settings).
 <a href="{{TRACK_LINK}}">Verify Now</a>
 {{PIXEL}}
 ```
-<img width="721" height="406" alt="image" src="https://github.com/user-attachments/assets/3dc35525-60ce-40c1-a73d-e53338dfc355" />
 
 ### 4. Design the Landing Page
 
@@ -251,7 +246,7 @@ The landing page is the fake login page where credentials get captured.
 <html>
 <body>
   <h2>Login Required</h2>
-  <form method="POST" action="/track/{{TOKEN}}/credential">
+  <form method="POST" action="/landing/{{TOKEN}}">
     <input type="hidden" name="token" value="{{TOKEN}}">
     <input type="text" name="username" placeholder="Email">
     <input type="password" name="password" placeholder="Password">
@@ -261,8 +256,6 @@ The landing page is the fake login page where credentials get captured.
 </body>
 </html>
 ```
-<img width="692" height="293" alt="image" src="https://github.com/user-attachments/assets/48a5d123-3aa9-4092-96aa-3ed4bb6ce115" />
-<img width="689" height="281" alt="image" src="https://github.com/user-attachments/assets/660c7ea4-9060-4bb8-8bff-117a38df2ce6" />
 
 ### 5. Add Recipients
 
@@ -270,8 +263,6 @@ The landing page is the fake login page where credentials get captured.
 2. Paste email addresses (one per line)
 3. Optionally import a CSV file
 4. Suppressed emails are automatically filtered out
-
-<img width="695" height="254" alt="image" src="https://github.com/user-attachments/assets/d4a49e7d-d931-4c03-931e-d51eeda5eb34" />
 
 ### 6. Pre-flight Checks
 
@@ -284,8 +275,6 @@ Before sending, validate your setup:
    - DKIM is properly configured (if using)
    - Your domain is not on any blacklists
    - Token signing is working
-
-<img width="501" height="575" alt="image" src="https://github.com/user-attachments/assets/fcc2d660-7521-4639-8dcf-9ff046a6eef8" />
 
 ### 7. Send the Campaign
 
@@ -302,9 +291,6 @@ After sending, track what happens:
 - **Events** (`/events`) - Detailed event log (opens, clicks, submissions)
 - **Funnel** (`/admin/campaign/<id>/funnel`) - Visual funnel (sent -> opened -> clicked -> submitted)
 - **Export** - Download data as CSV or PDF
-
-<img width="762" height="149" alt="image" src="https://github.com/user-attachments/assets/5954362c-bffc-4e38-9ad9-98c413630e88" />
-<img width="741" height="521" alt="image" src="https://github.com/user-attachments/assets/d0cc3c71-8fb1-446d-83ce-ac8496ca331d" />
 
 ---
 
@@ -334,9 +320,6 @@ Instead of a fake landing page, you can proxy a real website through DropoutJeep
    - **Content Manipulation Rules** - JSON rule array
 6. Click **Save Config**
 
-<img width="791" height="496" alt="image" src="https://github.com/user-attachments/assets/d450767e-7c8b-480a-b7e0-4ee1db5b9c43" />
-
-
 ### Proxy URL Structure
 
 ```
@@ -349,12 +332,78 @@ _____________________  _  ____
 - `/proxy/15/login` - Proxies `/login` on the target
 - `/proxy/15/static/logo.png` - Proxies `/static/logo.png`
 
-### Content Manipulation Rules - Script Kiddie Blocked, figure it out yourself
+### Content Manipulation Rules
 
 Rules tell the proxy what to modify. Format:
 
 ```json
+{
+  "url": "/login",
+  "match": "word",
+  "methods": ["GET", "POST"],
+  "replace": {
+    "response": {
+      "header": {
+        "X-Frame-Options": "",
+        "Content-Security-Policy": ""
+      },
+      "body": {
+        "append": "<script src='/proxy/static/.../hook.js'></script>",
+        "prepend": "<style>.warning{display:none}</style>",
+        "replace_selector": {
+          "form": "<form action='/proxy/15/login' method='POST'>...</form>"
+        },
+        "search": "Sign in",
+        "replace": "Verify identity"
+      }
+    },
+    "request": {
+      "header": {
+        "Referer": "https://www.example.com"
+      }
+    }
+  },
+  "dump": true
+}
 ```
+
+**Rule fields:**
+
+| Field | Description |
+|-------|-------------|
+| `url` | Path pattern to match |
+| `match` | `word`, `prefix`, or `regex` |
+| `methods` | HTTP methods (GET, POST, etc.) |
+| `replace.request.header` | Add/modify/delete request headers |
+| `replace.response.header` | Add/modify/delete response headers |
+| `replace.response.body.append` | HTML added before `</body>` |
+| `replace.response.body.prepend` | HTML added inside `<head>` |
+| `replace.response.body.replace_selector` | Replace elements matched by CSS selector |
+| `replace.response.body.search` / `replace` | Raw string replacement |
+| `inject_js.url` | Target JS path to intercept |
+| `inject_js.file` | Local file or URL to serve instead |
+| `dump` | Log full request/response |
+
+**Template variables in rules:**
+
+| Variable | Value |
+|----------|-------|
+| `{{ .Static }}` | Campaign's static prefix |
+| `{{ .Token }}` | Recipient token |
+| `{{ .CampaignID }}` | Campaign ID |
+
+### Plugins
+
+Plugins are reusable YAML files in `dropoutjeep_lib/proxy/plugins/`. Built-in plugins:
+
+| Plugin | What It Does |
+|--------|-------------|
+| `strip_security_headers` | Removes X-Frame-Options, CSP, etc. |
+| `inject_hook` | Adds a hook script to all HTML pages |
+| `replace_login_form` | Replaces login forms to POST back through the proxy |
+| `steal_session_js` | Replaces `/base.js` with a custom stealer script |
+
+To add your own: create a `.yaml` file in the plugins directory and restart the app.
 
 ### Upstream Egress Proxy
 
@@ -443,9 +492,6 @@ Route proxy traffic through an upstream proxy (HTTP, HTTPS, SOCKS5):
 - State parameter encodes campaign ID and recipient token (base64)
 - Captured tokens stored in `OAuthTokenCapture` and `CapturedOAuthToken` tables
 
-<img width="695" height="590" alt="image" src="https://github.com/user-attachments/assets/ebcb7f4c-3c90-452c-813f-a86211fb3b4d" />
-
-
 **SAML Relay:**
 - Intercept base64-encoded SAMLResponse assertions from identity providers
 - Decode and store SAML assertions for analysis
@@ -482,9 +528,6 @@ Route proxy traffic through an upstream proxy (HTTP, HTTPS, SOCKS5):
 - TLS fingerprint spoofing (impersonate Chrome, Safari, Firefox JA3 fingerprints)
 - Browser-in-the-middle rendering (real Chromium with CAPTCHA detection)
 
-<img width="692" height="402" alt="image" src="https://github.com/user-attachments/assets/11736379-080e-4744-8bca-4a3968696066" />
-
-
 ### C2 Connectors
 
 DropoutJeep can push captured credentials and session cookies to C2 frameworks automatically in a background thread.
@@ -507,9 +550,6 @@ DropoutJeep can push captured credentials and session cookies to C2 frameworks a
 2. Create a connector: select framework, enter URL and auth credentials
 3. Toggle connectors on/off per framework
 4. API endpoints: `/api/c2/connectors/` (bearer token auth with `campaigns:read`/`campaigns:write` scopes)
-
-<img width="630" height="521" alt="image" src="https://github.com/user-attachments/assets/17110814-9dce-4731-a6e3-5f11130a624d" />
-
 
 ### Auto-Reply Engine
 
@@ -567,8 +607,6 @@ Outbound webhook dispatch with HMAC-SHA256 signed payloads and configurable even
 - Each webhook records `last_status` (HTTP status code or error) and `last_sent_at`
 - Dispatch runs in a background thread (4-worker pool)
 
-<img width="644" height="472" alt="image" src="https://github.com/user-attachments/assets/ed93ce3e-17d8-4aae-8805-00d334e35810" />
-
 ### Suppression List
 
 Block specific emails or domains from receiving campaign emails.
@@ -601,8 +639,6 @@ Block specific emails or domains from receiving campaign emails.
 - Redirector chain support with health checking and open-redirect obfuscation
 - Per-recipient proxy URL assignment via wildcard subdomains
 - Domain routing (multi-domain proxy support with auto DNS/TLS provisioning)
-
-<img width="786" height="323" alt="image" src="https://github.com/user-attachments/assets/2952e225-f0d6-46ad-b486-d54530afc4a8" />
 
 ---
 
@@ -662,6 +698,91 @@ Block specific emails or domains from receiving campaign emails.
 3. Calculate click-through rate and credential submission rate
 4. Note any patterns (departments, time of day, device types)
 5. Provide recommendations for training based on results
+
+---
+
+## Project Structure
+
+```
+DropoutJeep/
+  dropoutjeep.py            # Main Flask application (start here)
+  proxy_server.py           # Standalone async proxy server
+  migrate_db.py             # Database migration script
+  requirements.txt          # Python dependencies
+  Dockerfile                # Container image
+  docker-compose.yml        # Full stack with Caddy (TLS)
+  Caddyfile                 # Caddy reverse proxy config
+
+  dropoutjeep_lib/
+    __init__.py             # Database init, webhooks, C2
+    models.py               # All database models (30+ tables)
+    migrations.py           # Schema migrations
+    routes/                 # Flask blueprints (20 files)
+      admin.py              # Admin dashboard, login, settings
+      campaigns.py          # Campaign CRUD
+      tracking.py           # Pixel, click tracking, landing pages
+      events.py             # Event listing
+      recipients.py         # Recipient management
+      sending_profiles.py   # SMTP profiles
+      templates.py          # Email templates
+      proxy_admin.py        # Proxy campaign config
+      webhooks.py           # Webhook management
+      c2_connectors.py      # C2 framework connections
+      auto_reply.py         # Auto-reply rules and pending replies
+      bounce.py             # Bounce processing
+    proxy/                  # Reverse proxy engine
+      engine.py             # httpx forwarder + Rule engine
+      manager.py            # Flask blueprint for proxy routes
+      server.py             # Standalone Starlette/uvicorn proxy
+      tls_transport.py      # JA3/TLS fingerprint spoofing (curl_cffi)
+      playwright_transport.py # Browser-in-the-middle (Chromium)
+      plugins/              # Built-in YAML plugins
+      plugins_py/           # Python plugins directory
+    utils/                  # Utility modules (50+ files)
+      auth.py               # Authentication, roles, audit
+      dialer.py             # Background email sender
+      mailer.py             # SMTP email sender
+      renderer.py           # Template rendering
+      validator.py          # Pre-flight validation
+      dkim_utils.py         # DKIM/SPF/DMARC checks
+      scheduler.py          # Campaign scheduling
+      analytics.py          # Heatmap, timeline, CSV/PDF export
+      sandbox_evasion.py    # Sandbox detection
+      evasion.py            # Header rotation, referer simulation
+      risk.py               # Risk scoring (open=1, click=3, credential=7, mfa=10)
+      domain_reputation.py  # VirusTotal integration, warmup limits
+      timing.py             # Timing analytics (percentiles)
+      webhooks.py           # Webhook dispatch with HMAC signing
+      suppression.py        # Suppression list management
+      auto_replier.py       # IMAP auto-reply engine
+      mailbox_fetcher.py    # IMAP mailbox monitoring
+      mail_ingest.py        # Background bounce processing
+      bounce_parser.py      # NDR message parsing
+      oauth_phish.py        # OAuth2 authorization code phishing
+      saml_relay.py         # SAML response capture and relay
+      token_parser.py       # JWT id_token parsing
+      cookie_validation.py  # Captured cookie replay validation
+      html_smuggler.py      # HTML smuggling dropper generation
+      polymorphic_payloads.py # Per-recipient payload variants
+      payload_staging.py    # Encrypted payload management
+      sender_rotation.py    # Round-robin sender identity rotation
+      domain_routing.py     # Wildcard subdomain URL generation
+      redirectors.py        # Redirector chains with health checking
+      qr_codes.py           # Per-recipient QR code generation
+      ics_builder.py        # RFC 5545 calendar invite builder
+      heatmap_js.py         # Click heatmap JavaScript injection
+      clean_urls.py         # Opaque /l/<token> URL generation
+      exfil.py              # HTTP/DNS exfiltration recording
+    c2/                     # C2 framework connectors
+      __init__.py           # Background dispatcher (2-thread pool)
+      cobalt_strike.py      # Cobalt Strike REST integration
+      mythic.py             # Mythic webhook integration
+      sliver.py             # Sliver gRPC/HTTP integration
+
+  templates/                # 71 Jinja2 HTML templates
+  static/                   # JavaScript files
+  tests/                    # Test suite
+```
 
 ---
 

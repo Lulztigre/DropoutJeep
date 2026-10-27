@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 font-mono-brutal">
+
+    <!-- Navigation Back Link -->
+    <div class="mb-6">
+        <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+            [ BACK TO DASHBOARD ]
+        </a>
+    </div>
+    <!-- Header -->
+    <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ SENDER_MAILERS ]</h1>
+            <p class="text-sm text-brutal-red font-bold">&gt; SMTP relay sending configuration registries</p>
+        </div>
+        <a href="{{ url_for('admin_sending_profile_new') }}" class="px-4 py-2.5 brutal-btn-black text-xs text-center flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
+            </svg>
+            [ ADD NEW MAILER ]
+        </a>
+    </header>
+
+    <!-- Mailers Grid -->
+    <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {% for sender in senders %}
+        <div class="brutal-card p-6 flex flex-col justify-between bg-stark-white">
+            <div>
+                <div class="flex items-start justify-between mb-4 pb-3 border-b border-pure-black">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg font-black text-pure-black truncate uppercase">{{ sender.name }}</h3>
+                        <p class="text-xs text-gray-500 mt-1 font-mono font-bold">
+                            {{ sender.smtp_host }}:{{ sender.smtp_port }}
+                        </p>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-bold border border-pure-black {{ 'bg-brutal-emerald text-white' if sender.use_tls else 'bg-brutal-amber text-pure-black' }}">
+                        {{ 'TLS_ON' if sender.use_tls else 'NO_TLS' }}
+                    </span>
+                </div>
+
+                <dl class="space-y-1.5 text-xs font-mono mb-6">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 font-bold">SMTP USER:</dt>
+                        <dd class="text-pure-black font-extrabold truncate max-w-[160px]" title="{{ sender.smtp_user }}">{{ sender.smtp_user or 'NONE' }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 font-bold">SUBSIDIARY:</dt>
+                        <dd class="text-pure-black font-extrabold truncate max-w-[160px]">{{ sender.subsidiary.name if sender.subsidiary else 'NONE' }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 font-bold">SENDER DOMAIN:</dt>
+                        <dd class="text-pure-black font-extrabold truncate max-w-[160px] text-brutal-red">{{ sender.subsidiary.sending_domain if sender.subsidiary else 'NONE' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="flex gap-3 text-xs pt-4 border-t border-pure-black">
+                <a href="{{ url_for('admin_sending_profile_edit', profile_id=sender.id) }}" class="flex-1 py-2 brutal-btn-white text-center font-bold">
+                    EDIT
+                </a>
+                <button onclick="confirmDelete({{ sender.id }}, '{{ sender.name | replace("'", "\\'") }}')" class="flex-1 py-2 brutal-btn-red text-center font-bold">
+                    DELETE
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full border-4 border-dashed border-pure-black p-12 text-center bg-stark-white">
+            <svg class="mx-auto h-16 w-16 text-pure-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+            </svg>
+            <h3 class="mt-4 text-lg font-black text-pure-black uppercase">[ No mailer configurations created ]</h3>
+            <p class="mt-2 text-xs text-gray-500 font-bold">You must register an SMTP relay profile to dispatch campaigns.</p>
+            <div class="mt-6">
+                <a href="{{ url_for('admin_sending_profile_new') }}" class="inline-flex items-center gap-2 px-6 py-3 brutal-btn-black text-sm">
+                    [ CONFIGURE FIRST SMTP MAILER ]
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Stark Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-pure-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-stark-white border-4 border-pure-black p-8 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div class="flex items-center gap-4 mb-4 border-b-2 border-pure-black pb-3">
+            <div class="flex-shrink-0 w-10 h-10 bg-brutal-red border-2 border-pure-black flex items-center justify-center text-white">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-extrabold text-pure-black uppercase">[ DELETE MAILER ]</h3>
+                <p class="text-xs text-gray-500 font-bold">PERMANENT_ACTION_DESTRUCTION</p>
+            </div>
+        </div>
+        
+        <p class="text-sm text-pure-black mb-6 font-bold leading-relaxed">
+            ARE YOU SURE YOU WANT TO PURGE SMTP SENDER PROFILE <strong id="mailerName" class="text-brutal-red font-black"></strong>? ALL LINKED CAMPAIGNS MAY FAIL RESOLUTION.
+        </p>
+        
+        <form id="deleteForm" method="POST" class="flex gap-4">
+            <input type="hidden" name="csrf_token" id="deleteCsrfToken" value="{{ csrf_token() }}">
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2.5 brutal-btn-white text-xs font-bold">
+                [ CANCEL ]
+            </button>
+            <button type="submit" class="flex-1 py-2.5 brutal-btn-red text-xs font-bold text-white">
+                [ CONFIRM PURGE ]
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Triage Toast Notification -->
+<div id="triage-toast" class="fixed bottom-6 right-6 border-4 border-pure-black bg-stark-white p-4 font-mono-brutal text-sm text-pure-black hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50">
+    <div class="flex items-center gap-3 font-bold">
+      <span class="text-brutal-red font-extrabold">[TRIAGED]</span>
+      <span id="triage-toast-msg">Action processed successfully.</span>
+    </div>
+  </div>
+
+<script>
+function confirmDelete(profileId, profileName) {
+    const modal = document.getElementById('deleteModal');
+    const form = document.getElementById('deleteForm');
+    const nameEl = document.getElementById('mailerName');
+    
+    nameEl.textContent = profileName;
+    form.action = `/admin/sending_profile/${profileId}/delete`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function showToast(message) {
+    const toast = document.getElementById('triage-toast');
+    document.getElementById('triage-toast-msg').textContent = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 2500);
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/mailers" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO MAILERS ]
+    </a>
+  </div>
+  
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ NEW_SENDER_PROFILE ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Configure SMTP relay sender and subsidiary domain records</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+    
+    <!-- Left Column: SMTP Profile -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ 01_SMTP_RELAY_CONFIG ]</h2>
+      
+      <form method="post" class="space-y-4 text-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">PROFILE NAME <span class="text-brutal-red">*</span></label>
+          <input type="text" name="name" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required placeholder="e.g., Target Relay">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SMTP HOST <span class="text-brutal-red">*</span></label>
+          <input type="text" name="smtp_host" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required placeholder="smtp.domain.com">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SMTP PORT <span class="text-brutal-red">*</span></label>
+          <input type="number" name="smtp_port" value="25" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SMTP USERNAME</label>
+          <input type="text" name="smtp_user" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="user@domain.com">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SMTP PASSWORD</label>
+          <input type="password" name="smtp_pass" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+        </div>
+
+        <div class="py-2">
+          <label class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+            <input type="checkbox" name="use_tls" checked class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+            USE TLS / SSL ENCRYPTION
+          </label>
+        </div>
+
+        <h3 class="text-sm font-black text-pure-black mt-6 mb-2 border-b border-pure-black pb-1 uppercase">[ IMAP_INBOX_CONFIG ]</h3>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP HOST</label>
+          <input type="text" name="imap_host" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="imap.domain.com">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP PORT</label>
+          <input type="number" name="imap_port" value="993" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP USERNAME</label>
+          <input type="text" name="imap_user" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="user@domain.com">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">IMAP PASSWORD</label>
+          <input type="password" name="imap_pass" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+        </div>
+
+        <div class="py-2">
+          <label class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+            <input type="checkbox" name="imap_use_tls" checked class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+            IMAP USE TLS / SSL
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">RATE PROFILE</label>
+          <select name="rate_profile_id" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+            <option value="">Auto-detect by host</option>
+            {% for rp in rate_profiles %}
+            <option value="{{ rp.id }}">{{ rp.name }} {% if rp.is_default %}(default){% endif %}</option>
+            {% endfor %}
+          </select>
+          <p class="text-[10px] text-gray-500 mt-1">If unset, delay rate limits auto-configure based on provider host.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">LINKED SUBSIDIARY</label>
+          <select name="subsidiary_id" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+            <option value="">None (Generic SMTP)</option>
+            {% for s in subsidiaries %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.sending_domain }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button class="w-full py-3 brutal-btn-black text-xs tracking-wider font-extrabold mt-4" type="submit">
+          [ CREATE SMTP MAILER ]
+        </button>
+      </form>
+    </section>
+
+    <!-- Right Column: Subsidiary Profile -->
+    <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ 02_NEW_SUBSIDIARY ]</h2>
+      
+      <form method="post" action="/admin/subsidiary/new" class="space-y-4 text-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SUBSIDIARY NAME <span class="text-brutal-red">*</span></label>
+          <input type="text" name="name" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required placeholder="e.g., Logistics Sub">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">SENDING DOMAIN <span class="text-brutal-red">*</span></label>
+          <input type="text" name="sending_domain" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required placeholder="the domain YOU own, eg cyberd0me.ng">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">DISPLAY NAME <span class="text-brutal-red">*</span></label>
+          <input type="text" name="display_name" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required placeholder="IT Security Alert">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">FROM ADDRESS (WHAT THE TARGET SEES) <span class="text-brutal-red">*</span></label>
+          <input type="email" name="from_address" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" required placeholder="it-support@the-domain-you-own">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">BOUNCE SUBDOMAIN</label>
+          <input type="text" name="bounce_subdomain" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="leave blank, or a domain you own">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">DKIM SELECTOR</label>
+          <input type="text" name="dkim_selector" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="the TXT label, eg dkim2">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-pure-black mb-1">DKIM PRIVATE KEY (PEM FORMAT)</label>
+          <textarea name="dkim_private_key" rows="4" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black font-mono text-xs focus:border-brutal-red focus:outline-none" placeholder="-----BEGIN RSA PRIVATE KEY-----..."></textarea>
+        </div>
+
+        <button class="w-full py-3 brutal-btn-red text-xs tracking-wider font-extrabold mt-4" type="submit">
+          [ CREATE SUBSIDIARY ]
+        </button>
+      </form>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

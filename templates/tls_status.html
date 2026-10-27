@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">TLS CERTIFICATE STATUS</h1>
+    <a href="{{ url_for('admin_proxy_domains') }}" class="brutal-btn-white px-4 py-2 text-sm">BACK TO PROXY DOMAINS</a>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">TOTAL DOMAINS</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2">{{ domains | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">TLS ENABLED</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-brutal-amber">{{ domains | selectattr('auto_tls_enabled') | list | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">TLS READY</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-brutal-emerald">{{ domains | selectattr('tls_ready') | list | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">PROVISION ERRORS</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 {% if domains | selectattr('provision_error') | list | length > 0 %}text-brutal-red{% else %}text-brutal-emerald{% endif %}">
+        {{ domains | selectattr('provision_error') | list | length }}
+      </div>
+    </div>
+  </div>
+
+  <!-- TLS Status Table -->
+  <div class="brutal-card p-6 mb-8">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">Certificate Status per Domain</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[900px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Domain</th>
+            <th class="text-left py-2">TLS Provider</th>
+            <th class="text-left py-2">Auto TLS</th>
+            <th class="text-left py-2">TLS Ready</th>
+            <th class="text-left py-2">Cert Path</th>
+            <th class="text-left py-2">Key Path</th>
+            <th class="text-left py-2">Last Provisioned</th>
+            <th class="text-left py-2">Error</th>
+            <th class="text-right py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in domains %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2 font-bold">{{ d.domain }}</td>
+            <td class="py-2">{{ d.tls_provider | upper }}</td>
+            <td class="py-2">
+              {% if d.auto_tls_enabled %}
+                <span class="text-brutal-emerald font-bold">YES</span>
+              {% else %}
+                <span class="text-gray-500">NO</span>
+              {% endif %}
+            </td>
+            <td class="py-2">
+              {% if d.tls_ready %}
+                <span class="text-brutal-emerald font-bold">READY</span>
+              {% elif d.auto_tls_enabled %}
+                <span class="text-brutal-amber font-bold">PENDING</span>
+              {% else %}
+                <span class="text-gray-500">-</span>
+              {% endif %}
+            </td>
+            <td class="py-2 font-mono text-xs break-all max-w-[200px]">{{ d.cert_path or '-' }}</td>
+            <td class="py-2 font-mono text-xs break-all max-w-[200px]">{{ d.key_path or '-' }}</td>
+            <td class="py-2 text-xs">{{ d.last_provisioned_at.strftime('%Y-%m-%d %H:%M') if d.last_provisioned_at else '-' }}</td>
+            <td class="py-2 text-xs max-w-[200px]">
+              {% if d.provision_error %}
+                <span class="text-brutal-red" title="{{ d.provision_error }}">{{ d.provision_error[:60] }}{% if d.provision_error|length > 60 %}...{% endif %}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="py-2 text-right">
+              <form method="post" action="{{ url_for('admin_proxy_domain_provision', domain_id=d.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-white px-3 py-1 text-xs">RENEW TLS</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="py-4 text-gray-500 dark:text-gray-400">No proxy domains configured.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TLS Provider Reference -->
+  <div class="brutal-card p-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">TLS Provider Reference</h3>
+    <table class="w-full text-sm font-mono-brutal">
+      <thead class="border-b-2 border-pure-black dark:border-stark-white">
+        <tr>
+          <th class="text-left py-2">Provider</th>
+          <th class="text-left py-2">Method</th>
+          <th class="text-left py-2">Requirements</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-gray-300 dark:border-gray-700">
+          <td class="py-2 font-bold">Caddy on-demand</td>
+          <td class="py-2">Automatic TLS via Caddy reverse proxy</td>
+          <td class="py-2 font-mono text-xs">Caddy running, /internal/caddy-ask endpoint</td>
+        </tr>
+        <tr>
+          <td class="py-2 font-bold">Certbot (DNS-01)</td>
+          <td class="py-2">Wildcard cert via Let's Encrypt</td>
+          <td class="py-2 font-mono text-xs">certbot + DNS plugin, acme_email</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+{% endblock %}

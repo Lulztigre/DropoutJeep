@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+    <div class="mb-6">
+        <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+            [ BACK TO CAMPAIGN INFO ]
+        </a>
+    </div>
+
+    <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ EDIT_CAMPAIGN ]</h1>
+            <p class="text-sm text-brutal-red font-bold">&gt; {{ campaign.name }}</p>
+        </div>
+        <div class="flex gap-2">
+            <a class="px-4 py-2 brutal-btn-white text-xs" href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}">INFO</a>
+            <a class="px-4 py-2 brutal-btn-white text-xs" href="{{ url_for('campaigns_admin.admin_oauth_config', cid=campaign.id) }}">OAUTH</a>
+            <a class="px-4 py-2 brutal-btn-white text-xs" href="{{ url_for('campaigns_admin.admin_saml_config', cid=campaign.id) }}">SAML</a>
+            <a class="px-4 py-2 brutal-btn-white text-xs" href="{{ url_for('campaigns_admin.admin_payloads', cid=campaign.id) }}">PAYLOADS</a>
+            <a class="px-4 py-2 brutal-btn-white text-xs" href="{{ url_for('campaigns_admin.admin_campaign_qr', cid=campaign.id) }}">QR</a>
+        </div>
+    </header>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-8 text-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Basic Info -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ 01_BASIC_INFO ]</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold text-pure-black mb-1">CAMPAIGN NAME <span class="text-brutal-red">*</span></label>
+                    <input type="text" name="name" value="{{ campaign.name }}" required class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-pure-black mb-1">EMAIL SUBJECT <span class="text-brutal-red">*</span></label>
+                    <input type="text" name="subject" value="{{ campaign.subject }}" required class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-pure-black mb-1">SENDING SMTP PROFILE <span class="text-brutal-red">*</span></label>
+                    <select name="sending_profile_id" required class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                        <option value="">-- Select a sending profile --</option>
+                        {% for p in sending_profiles %}
+                        <option value="{{ p.id }}" {% if campaign.sending_profile_id == p.id %}selected{% endif %}>{{ p.name }} ({{ p.subsidiary.name if p.subsidiary else 'no-subsidiary' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recipients -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-2 uppercase">[ 02_RECIPIENTS ]</h2>
+            <p class="text-xs text-gray-500 font-bold mb-4">Replace all recipients (one email per line).</p>
+            <textarea name="recipients" rows="6" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black font-mono focus:border-brutal-red focus:outline-none">{{ recipients_text }}</textarea>
+        </section>
+
+        <!-- Email Template -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-3 mb-4 border-b-2 border-pure-black">
+                <div>
+                    <h2 class="text-lg font-black text-pure-black uppercase tracking-tight">[ 03_EMAIL_TEMPLATE ]</h2>
+                    <p class="text-[11px] text-gray-600 font-semibold mt-0.5">Edit email content &amp; preview real-time dynamic tags</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 bg-off-white p-1.5 border-2 border-pure-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <span class="text-[10px] font-black uppercase text-gray-500 px-1">OPERATIONS TOOLS:</span>
+                    <a href="/admin/pretext-gen" target="_blank" class="px-2.5 py-1 text-xs font-extrabold bg-brutal-amber text-pure-black hover:bg-pure-black hover:text-stark-white border border-pure-black transition-colors flex items-center gap-1 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Launch Pretext Generator in Operations">
+                        <span>🪄</span> PRETEXT GENERATOR
+                    </a>
+                    <a href="/admin/osint" target="_blank" class="px-2.5 py-1 text-xs font-extrabold bg-stark-white text-pure-black hover:bg-pure-black hover:text-stark-white border border-pure-black transition-colors flex items-center gap-1 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Launch OSINT Target Discovery">
+                        <span>🔍</span> OSINT DISCOVERY
+                    </a>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap bg-off-white border-2 border-pure-black p-2 mb-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <span class="shrink-0 text-[10px] font-black uppercase text-gray-500 bg-gray-200 px-1.5 py-0.5 border border-pure-black">CLICK TO INSERT:</span>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{TRACK_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{TRACK_LINK}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{UNSUBSCRIBE_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{UNSUBSCRIBE_LINK}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CALENDAR_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{CALENDAR_LINK}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{PIXEL}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{PIXEL}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{TOKEN}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{TOKEN}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CANARY_URL}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{CANARY_URL}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CANARY_IMAGE}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{CANARY_IMAGE}}{% endraw %}</button>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+                        <span>HTML CODE EDITOR</span>
+                        <button type="button" onclick="insertUnsubscribeFooter()" class="text-brutal-amber hover:underline font-bold text-[11px]">
+                            + INSERT UNSUBSCRIBE FOOTER
+                        </button>
+                    </div>
+                    <textarea id="bodyHtmlEditor" name="body_html" required class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black p-2.5 font-mono text-xs focus:border-brutal-red focus:outline-none">{{ campaign.body_html }}</textarea>
+                </div>
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold">PREVIEW ENGINE</div>
+                    <iframe id="emailPreview" class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Landing Page -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-2 uppercase">[ 04_LANDING_PAGE ]</h2>
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold">HTML CODE EDITOR</div>
+                    <textarea id="landingHtmlEditor" name="landing_html" required class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black p-2.5 font-mono text-xs focus:border-brutal-red focus:outline-none">{{ campaign.landing_html }}</textarea>
+                </div>
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold">PREVIEW ENGINE</div>
+                    <iframe id="landingPreview" class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulation Flow -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 05_SIMULATION_FLOW ]</h2>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-pure-black mb-1">FLOW TYPE</label>
+                <select id="flow_type" name="flow_type" class="w-full md:w-1/2 bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                    <option value="single_step" {% if campaign.flow_type == 'single_step' %}selected{% endif %}>Single-step landing page</option>
+                    <option value="credential_mfa_success" {% if campaign.flow_type == 'credential_mfa_success' %}selected{% endif %}>Credential &rarr; MFA &rarr; Success</option>
+                    {% if is_admin %}
+                    <option value="reverse_proxy" {% if campaign.flow_type == 'reverse_proxy' %}selected{% endif %}>Reverse Proxy (MITM) [admin only]</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div id="single_step_fields" class="border-2 border-pure-black p-4 bg-gray-50 {% if campaign.flow_type != 'single_step' %}hidden{% endif %}">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ SINGLE-STEP ACKNOWLEDGEMENT ]</h3>
+                <textarea name="flow_success_message" rows="3" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">{{ flow_config.get('success_message', 'This was an authorized phishing simulation.') }}</textarea>
+            </div>
+
+            <div id="credential_mfa_fields" class="border-2 border-pure-black p-4 bg-gray-50 {% if campaign.flow_type != 'credential_mfa_success' %}hidden{% endif %}">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ CREDENTIAL &rarr; MFA &rarr; SUCCESS ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SUCCESS REDIRECT URL</label>
+                        <input type="url" name="flow_redirect_url" value="{{ flow_config.get('redirect_url', 'https://en.wikipedia.org/wiki/Phishing') }}" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">MFA PAGE TITLE</label>
+                        <input type="text" name="flow_mfa_title" value="{{ flow_config.get('mfa_title', 'Two-Factor Authentication') }}" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div id="reverse_proxy_fields" class="mt-6 border-2 border-pure-black p-4 bg-gray-50 {% if campaign.flow_type != 'reverse_proxy' %}hidden{% endif %}">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ REVERSE PROXY TARGET ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">TARGET URL</label>
+                        <input type="url" name="proxy_target_url" value="{{ flow_config.get('target_url', '') }}" placeholder="https://login.microsoftonline.com/..." class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">UPSTREAM PROXY</label>
+                        <input type="text" name="proxy_upstream_proxy" value="{{ flow_config.get('upstream_proxy', '') }}" placeholder="http://user:pass@proxy.example.com:8080" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">TLS FINGERPRINT</label>
+                        <input type="text" name="proxy_tls_fingerprint" value="{{ flow_config.get('tls_fingerprint', '') }}" placeholder="Default (httpx)" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2 flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="proxy_capture_credentials" {% if flow_config.get('capture_credentials', True) %}checked{% endif %} class="w-4 h-4 border-2 border-pure-black accent-brutal-red"> Capture credentials / MFA
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="proxy_capture_cookies" {% if flow_config.get('capture_cookies', True) %}checked{% endif %} class="w-4 h-4 border-2 border-pure-black accent-brutal-red"> Capture cookies
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="proxy_mfa_relay_enabled" {% if flow_config.get('mfa_relay_enabled', True) %}checked{% endif %} class="w-4 h-4 border-2 border-pure-black accent-brutal-red"> Enable MFA relay
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OAuth2 / SAML compact -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 06_OAUTH2_AND_SAML ]</h2>
+            {% set oauth = flow_config.get('oauth', {}) %}
+            <div class="border-2 border-pure-black p-4 mb-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ OAUTH2 ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold mb-1">PROVIDER</label><input type="text" name="oauth_provider" value="{{ oauth.get('provider', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                    <div><label class="block text-xs font-bold mb-1">CLIENT ID</label><input type="text" name="oauth_client_id" value="{{ oauth.get('client_id', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                    <div class="md:col-span-2"><label class="block text-xs font-bold mb-1">AUTH ENDPOINT</label><input type="url" name="oauth_authorization_endpoint" value="{{ oauth.get('authorization_endpoint', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                    <div class="md:col-span-2"><label class="block text-xs font-bold mb-1">TOKEN ENDPOINT</label><input type="url" name="oauth_token_endpoint" value="{{ oauth.get('token_endpoint', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                    <div class="md:col-span-2"><label class="block text-xs font-bold mb-1">REDIRECT URI</label><input type="url" name="oauth_redirect_uri" value="{{ oauth.get('redirect_uri', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                    <div class="md:col-span-2"><label class="block text-xs font-bold mb-1">SCOPE</label><input type="text" name="oauth_scope" value="{{ oauth.get('scope', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                    <div class="md:col-span-2"><label class="block text-xs font-bold mb-1">EXTRA PARAMS</label><textarea name="oauth_extra_params" rows="2" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black font-mono text-xs">{% if oauth.get('extra_params') %}{% for k,v in oauth.extra_params.items() %}{{ k }}={{ v }}{% if not loop.last %}\n{% endif %}{% endfor %}{% endif %}</textarea></div>
+                    <div class="md:col-span-2"><label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" name="oauth_auto_exchange" {% if oauth.get('auto_exchange') %}checked{% endif %} class="w-4 h-4 border-2 border-pure-black accent-brutal-red"> AUTO-EXCHANGE</label></div>
+                </div>
+            </div>
+            <div class="border-2 border-pure-black p-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ SAML ]</h3>
+                <div>
+                    <label class="block text-xs font-bold mb-1">REAL ACS URL</label>
+                    <input type="url" name="saml_real_acs_url" value="{{ flow_config.get('saml', {}).get('real_acs_url', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black">
+                </div>
+            </div>
+        </section>
+
+        <!-- Calendar -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 07_CALENDAR_INVITE ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="calendar_invite" name="calendar_invite" value="1" {% if campaign.calendar_invite %}checked{% endif %} class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="calendar_invite" class="text-xs font-bold text-pure-black">ATTACH .ICS CALENDAR INVITE</label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label class="block text-xs font-bold mb-1">EVENT TITLE</label><input type="text" name="calendar_event_title" value="{{ campaign.calendar_event_title or '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                <div><label class="block text-xs font-bold mb-1">LOCATION</label><input type="text" name="calendar_event_location" value="{{ campaign.calendar_event_location or '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                <div><label class="block text-xs font-bold mb-1">START (LOCAL)</label><input type="datetime-local" name="calendar_event_start" value="{{ campaign.calendar_event_start.strftime('%Y-%m-%dT%H:%M') if campaign.calendar_event_start else '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                <div><label class="block text-xs font-bold mb-1">END (LOCAL)</label><input type="datetime-local" name="calendar_event_end" value="{{ campaign.calendar_event_end.strftime('%Y-%m-%dT%H:%M') if campaign.calendar_event_end else '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+            </div>
+        </section>
+
+        <!-- Training -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 08_TRAINING_REDIRECTION ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="training_enabled" name="training_enabled" {% if flow_config.get('training_enabled') %}checked{% endif %} class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="training_enabled" class="text-xs font-bold text-pure-black">ENABLE TRAINING REDIRECTION</label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label class="block text-xs font-bold mb-1">TRAINING URL</label><input type="url" name="training_url" value="{{ flow_config.get('training_url', '') }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                <div><label class="block text-xs font-bold mb-1">AUTO-COMPLETE AFTER (SECONDS)</label><input type="number" name="training_duration_seconds" value="{{ flow_config.get('training_duration_seconds', 30) }}" min="0" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+            </div>
+        </section>
+
+        <!-- Schedule -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 09_SCHEDULE ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="schedule_enabled" name="schedule_enabled" {% if campaign.schedule_enabled %}checked{% endif %} class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="schedule_enabled" class="text-xs font-bold text-pure-black">ENABLE SCHEDULED LAUNCH</label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label class="block text-xs font-bold mb-1">ONE-TIME LAUNCH (LOCAL)</label><input type="datetime-local" name="schedule_datetime" value="{{ campaign.scheduled_at.strftime('%Y-%m-%dT%H:%M') if campaign.scheduled_at else '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                <div><label class="block text-xs font-bold mb-1">CRON EXPRESSION</label><input type="text" name="schedule_cron" value="{{ campaign.schedule_cron or '' }}" placeholder="0 9 * * 1" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black"></div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold mb-1">TIMEZONE</label>
+                    <select name="schedule_timezone" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black bg-white">
+                        {% for tz in ['UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Tokyo','Australia/Sydney'] %}
+                        <option value="{{ tz }}" {% if campaign.schedule_timezone == tz %}selected{% endif %}>{{ tz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deliverability -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 10_DELIVERABILITY ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="domain_reputation_check_enabled" name="domain_reputation_check_enabled" {% if campaign.domain_reputation_check_enabled %}checked{% endif %} class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="domain_reputation_check_enabled" class="text-xs font-bold text-pure-black">RUN DOMAIN REPUTATION + WARMUP CHECK BEFORE LAUNCH</label>
+            </div>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="store_credentials_plaintext" name="store_credentials_plaintext" {% if campaign.store_credentials_plaintext %}checked{% endif %} class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="store_credentials_plaintext" class="text-xs font-bold text-pure-black">STORE CAPTURED CREDENTIALS IN PLAINTEXT (DEFAULT: ENCRYPTED)</label>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1">SENDER ROTATION POOL</label>
+                <select name="sender_rotation_pool_id" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black bg-white">
+                    <option value="">-- No rotation --</option>
+                    {% for pool in rotation_pools %}
+                    <option value="{{ pool.id }}" {% if campaign.sender_rotation_pool_id == pool.id %}selected{% endif %}>{{ pool.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </section>
+
+        <!-- QR Code -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 11_QR_CODE ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="qr_code_enabled" name="qr_code_enabled" {% if flow_config.get('qr_code_enabled') %}checked{% endif %} class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="qr_code_enabled" class="text-xs font-bold text-pure-black">EMBED PER-RECIPIENT QR CODE IN EMAIL BODY (USE {{ '{{QR_CODE}}' }})</label>
+            </div>
+            <p class="text-xs text-gray-500 font-bold">When enabled, sending the campaign replaces <code class="bg-off-white dark:bg-black px-1 border border-gray-300 dark:border-gray-700">{{ '{{QR_CODE}}' }}</code> with a tracked QR code image per recipient.</p>
+        </section>
+
+        <div class="flex items-center justify-between pt-6">
+            <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="text-xs font-bold text-gray-700 hover:text-pure-black">&larr; [ BACK TO CAMPAIGN INFO ]</a>
+            <button type="submit" class="px-8 py-3 brutal-btn-black text-xs tracking-wider font-extrabold">[ SAVE CAMPAIGN ]</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function wrapPreviewHtml(bodyHtml) { return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + bodyHtml + '</body></html>'; }
+function insertTemplateTag(editorId, tag) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    const start = editor.selectionStart || editor.value.length;
+    const end = editor.selectionEnd || editor.value.length;
+    editor.value = editor.value.substring(0, start) + tag + editor.value.substring(end);
+    previewEmailTemplate();
+}
+function insertUnsubscribeFooter() {
+    const editor = document.getElementById('bodyHtmlEditor');
+    const footerHtml = '\n<p style="font-size:11px; color:#666666; text-align:center; margin-top:30px;"><a href="{% raw %}{{UNSUBSCRIBE_LINK}}{% endraw %}" style="color:#666666; text-decoration:underline;">Unsubscribe from communications</a></p>';
+    editor.value += footerHtml;
+    previewEmailTemplate();
+}
+function previewEmailTemplate() {
+    const html = document.getElementById('bodyHtmlEditor').value;
+    const demo = html
+        .replace(/\{\{TRACK_LINK\}\}/g,'https://demo.local/track/demo-token')
+        .replace(/\{\{UNSUBSCRIBE_LINK\}\}/g,'https://demo.local/unsubscribe/demo-token')
+        .replace(/\{\{PIXEL\}\}/g,'<img src="https://demo.local/pixel/demo-token" width="1" height="1" alt="">')
+        .replace(/\{\{TOKEN\}\}/g,'demo-token-xyz')
+        .replace(/\{\{CANARY_URL\}\}/g,'https://demo.local/canary/demo-token')
+        .replace(/\{\{CANARY_IMAGE\}\}/g,'<img src="https://demo.local/canary/demo-token.gif" width="1" height="1" alt="">')
+        .replace(/\{\{QR_CODE\}\}/g,'<div style="border:2px dashed #000;padding:10px;text-align:center;font-family:monospace;font-size:12px;">[ QR CODE WILL RENDER HERE ]</div>');
+    document.getElementById('emailPreview').srcdoc = wrapPreviewHtml(demo);
+}
+function previewLandingTemplate() {
+    const html = document.getElementById('landingHtmlEditor').value;
+    document.getElementById('landingPreview').srcdoc = wrapPreviewHtml(html.replace(/\{\{TOKEN\}\}/g,'demo-token-xyz'));
+}
+document.getElementById('bodyHtmlEditor').addEventListener('input', previewEmailTemplate);
+document.getElementById('landingHtmlEditor').addEventListener('input', previewLandingTemplate);
+function updateFlowTypeFields() {
+    const flowType = document.getElementById('flow_type').value;
+    document.getElementById('single_step_fields').classList.toggle('hidden', flowType !== 'single_step');
+    document.getElementById('credential_mfa_fields').classList.toggle('hidden', flowType !== 'credential_mfa_success');
+    document.getElementById('reverse_proxy_fields').classList.toggle('hidden', flowType !== 'reverse_proxy');
+}
+document.getElementById('flow_type').addEventListener('change', updateFlowTypeFields);
+updateFlowTypeFields();
+previewEmailTemplate();
+previewLandingTemplate();
+</script>
+{% endblock %}

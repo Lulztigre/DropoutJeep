@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    {% if sp %}
+    <a href="{{ url_for('subsidiaries.deliverability', sp_id=sp.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DELIVERABILITY TEST ]
+    </a>
+    {% else %}
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+    {% endif %}
+  </div>
+  
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ TEST_RESULTS: {{ domain }} ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Diagnostic reports for SPF, DKIM, DMARC, and SMTP</p>
+  </header>
+
+  <div class="space-y-6 text-sm">
+    
+    <!-- SPF Result -->
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div class="flex justify-between items-center border-b border-pure-black pb-2 mb-3">
+        <h2 class="font-extrabold text-pure-black">01_SPF_RECORD</h2>
+        {% if result.spf.ok %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-emerald text-white uppercase">PASS</span>
+        {% else %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-red text-white uppercase">FAIL</span>
+        {% endif %}
+      </div>
+      <pre class="bg-off-white p-3 border border-pure-black overflow-x-auto text-xs text-pure-black select-all mb-2">{{ result.spf.txt }}</pre>
+      <p class="text-xs text-gray-500 font-bold">STATUS: {{ 'Alignment record verified' if result.spf.ok else 'Missing or malformed record' }}</p>
+    </div>
+
+    <!-- DKIM Result -->
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div class="flex justify-between items-center border-b border-pure-black pb-2 mb-3">
+        <h2 class="font-extrabold text-pure-black">02_DKIM_RECORD (SELECTOR: {{ selector }})</h2>
+        {% if result.dkim.ok %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-emerald text-white uppercase">PASS</span>
+        {% else %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-red text-white uppercase">FAIL</span>
+        {% endif %}
+      </div>
+      <pre class="bg-off-white p-3 border border-pure-black overflow-x-auto text-xs text-pure-black select-all mb-2">{{ result.dkim.txt }}</pre>
+      <p class="text-xs text-gray-500 font-bold">STATUS: {{ 'Signature record verified' if result.dkim.ok else 'Missing or signature mismatch' }}</p>
+    </div>
+
+    <!-- DMARC Result -->
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div class="flex justify-between items-center border-b border-pure-black pb-2 mb-3">
+        <h2 class="font-extrabold text-pure-black">03_DMARC_RECORD</h2>
+        {% if result.dmarc.ok %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-emerald text-white uppercase">PASS</span>
+        {% else %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-red text-white uppercase">FAIL</span>
+        {% endif %}
+      </div>
+      <pre class="bg-off-white p-3 border border-pure-black overflow-x-auto text-xs text-pure-black select-all mb-2">{{ result.dmarc.txt }}</pre>
+      <p class="text-xs text-gray-500 font-bold">STATUS: {{ 'DMARC alignment checks enabled' if result.dmarc.ok else 'DMARC record missing' }}</p>
+    </div>
+
+    <!-- SMTP Connection -->
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div class="flex justify-between items-center border-b border-pure-black pb-2 mb-3">
+        <h2 class="font-extrabold text-pure-black">04_SMTP_RELAY_CONNECTIVITY</h2>
+        {% if result.smtp.ok %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-emerald text-white uppercase">PASS</span>
+        {% else %}
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-red text-white uppercase">FAIL</span>
+        {% endif %}
+      </div>
+      <pre class="bg-off-white p-3 border border-pure-black overflow-x-auto text-xs text-pure-black select-all mb-2">{{ result.smtp.txt }}</pre>
+      <p class="text-xs text-gray-500 font-bold">STATUS: {{ 'Socket handshake verified (NOOP 250)' if result.smtp.ok else 'Socket timeout or authentication failure' }}</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="pt-4 border-t-2 border-pure-black flex gap-4">
+      <a href="{{ url_for('subsidiaries.deliverability', sp_id=sp.id) if sp else '/mailers' }}" class="px-6 py-3 brutal-btn-black text-xs font-bold text-center">
+        [ RUN ANOTHER TEST ]
+      </a>
+      <a href="/mailers" class="px-6 py-3 brutal-btn-white text-xs font-bold text-center">
+        [ RETURN TO MAILERS ]
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

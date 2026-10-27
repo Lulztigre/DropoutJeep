@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/admin/redirectors" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO REDIRECTORS ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ REDIRECTOR_HEALTH ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Automated health monitoring for redirector chains. Checks run every 5 minutes.</p>
+    </div>
+    <div class="flex gap-3">
+      <form method="post" action="{{ url_for('admin_redirector_check_all') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="px-4 py-2.5 brutal-btn-red font-mono-brutal text-xs">CHECK ALL NOW</button>
+      </form>
+    </div>
+  </header>
+
+<!-- Summary cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+    <div class="font-mono-brutal text-xs text-gray-500 uppercase">Total Redirectors</div>
+    <div class="font-mono-brutal text-3xl font-extrabold">{{ total }}</div>
+  </div>
+  <div class="border-4 border-brutal-emerald bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(16,185,129,1)]">
+    <div class="font-mono-brutal text-xs text-brutal-emerald uppercase">Healthy</div>
+    <div class="font-mono-brutal text-3xl font-extrabold text-brutal-emerald">{{ healthy_count }}</div>
+  </div>
+  <div class="border-4 border-brutal-red bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+    <div class="font-mono-brutal text-xs text-brutal-red uppercase">Unhealthy</div>
+    <div class="font-mono-brutal text-3xl font-extrabold text-brutal-red">{{ unhealthy_count }}</div>
+  </div>
+  <div class="border-4 border-brutal-amber bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(245,158,11,1)]">
+    <div class="font-mono-brutal text-xs text-brutal-amber uppercase">Unknown</div>
+    <div class="font-mono-brutal text-3xl font-extrabold text-brutal-amber">{{ unknown_count }}</div>
+  </div>
+</div>
+
+<!-- Uptime chart -->
+{% if all_logs %}
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ UPTIME_TIMELINE ]</h2>
+  <div class="overflow-x-auto">
+    <div id="uptime-chart" class="flex gap-0.5 items-end" style="min-height: 60px;">
+      {% for log in all_logs|reverse %}
+      <div class="flex-shrink-0 w-2 cursor-pointer transition-all hover:scale-y-110"
+           title="{{ log.redirector.name }} - {{ 'OK' if log.is_healthy else 'FAIL' }} - {{ log.checked_at.strftime('%H:%M') if log.checked_at else '' }}"
+           style="height: {% if log.is_healthy %}40{% else %}20{% endif %}px; background-color: {% if log.is_healthy %}#10B981{% else %}#E11D48{% endif %};">
+      </div>
+      {% endfor %}
+    </div>
+    <div class="flex justify-between font-mono-brutal text-xs text-gray-500 mt-2">
+      <span>{{ all_logs[-1].checked_at.strftime('%H:%M') if all_logs and all_logs[-1].checked_at else '' }}</span>
+      <span>Oldest</span>
+      <span>{{ all_logs[0].checked_at.strftime('%H:%M') if all_logs and all_logs[0].checked_at else '' }}</span>
+      <span>Now</span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Per-redirector status -->
+<div class="space-y-6">
+  {% for hd in health_data %}
+  {% set r = hd.redirector %}
+  {% set history = hd.history %}
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span class="font-mono-brutal font-bold text-lg">{{ r.name }}</span>
+        {% if r.health_status == 'healthy' %}
+          <span class="px-2 py-0.5 border-2 border-brutal-emerald text-brutal-emerald font-mono-brutal text-xs font-bold">HEALTHY</span>
+        {% elif r.health_status == 'unhealthy' %}
+          <span class="px-2 py-0.5 border-2 border-brutal-red text-brutal-red font-mono-brutal text-xs font-bold">UNHEALTHY</span>
+        {% else %}
+          <span class="px-2 py-0.5 border-2 border-gray-400 text-gray-500 font-mono-brutal text-xs font-bold">UNKNOWN</span>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-3">
+        {% if r.last_checked_at %}
+          <span class="font-mono-brutal text-xs text-gray-500">Last check: {{ r.last_checked_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        {% endif %}
+        <form method="post" action="{{ url_for('admin_redirector_check', redirector_id=r.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="px-3 py-1 brutal-btn-white font-mono-brutal text-xs">CHECK</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="font-mono-brutal text-xs text-gray-500 mb-3 break-all">{{ r.url_template }}</div>
+
+    {% if r.last_error %}
+    <div class="mb-3 px-3 py-2 border-2 border-brutal-red bg-off-white dark:bg-black">
+      <span class="font-mono-brutal text-xs text-brutal-red font-bold">ERROR:</span>
+      <span class="font-mono-brutal text-xs">{{ r.last_error }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Response time sparkline -->
+    {% if history %}
+    <div class="mb-3">
+      <div class="font-mono-brutal text-xs font-bold text-gray-500 mb-1">RESPONSE TIME (last {{ history | length }} checks)</div>
+      <div class="flex gap-0.5 items-end" style="height: 30px;">
+        {% for h in history|reverse %}
+        <div class="flex-shrink-0 w-1.5 transition-all hover:scale-y-110"
+             title="{{ h.response_time_ms or 'N/A' }}ms - {{ h.checked_at[:16] if h.checked_at else '' }}"
+             style="height: {% if h.response_time_ms %}{{ [h.response_time_ms / 5, 25] | min }}{% else %}5{% endif %}px; background-color: {% if h.is_healthy %}#10B981{% else %}#E11D48{% endif %};">
+        </div>
+        {% endfor %}
+      </div>
+      <div class="flex justify-between font-mono-brutal text-xs text-gray-500 mt-1">
+        <span>{{ history[0].checked_at[:16] if history[0].checked_at else '' }}</span>
+        <span>{{ history[-1].checked_at[:16] if history[-1].checked_at else '' }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent checks table -->
+    {% if history %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-xs">
+        <thead>
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <th class="p-1 uppercase">Time</th>
+            <th class="p-1 uppercase">Status</th>
+            <th class="p-1 uppercase">Code</th>
+            <th class="p-1 uppercase">Latency</th>
+            <th class="p-1 uppercase">Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history[:10] %}
+          <tr class="border-b border-gray-200 dark:border-gray-800">
+            <td class="p-1">{{ h.checked_at[:16] if h.checked_at else '-' }}</td>
+            <td class="p-1">
+              {% if h.is_healthy %}
+                <span class="text-brutal-emerald font-bold">OK</span>
+              {% else %}
+                <span class="text-brutal-red font-bold">FAIL</span>
+              {% endif %}
+            </td>
+            <td class="p-1">{{ h.status_code or '-' }}</td>
+            <td class="p-1">{{ h.response_time_ms or '-' }}ms</td>
+            <td class="p-1 text-gray-500">{{ (h.error_message or '-') | truncate(50) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="font-mono-brutal text-xs text-gray-500">No health check history yet.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% if not redirectors %}
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-12">
+    No redirectors configured. Add redirectors to enable health monitoring.
+  </p>
+</div>
+{% endif %}
+</div>
+{% endblock %}

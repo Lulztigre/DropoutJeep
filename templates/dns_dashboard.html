@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">DNS DASHBOARD</h1>
+    <a href="{{ url_for('admin_proxy_domains') }}" class="brutal-btn-white px-4 py-2 text-sm">BACK TO PROXY DOMAINS</a>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">TOTAL DOMAINS</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2">{{ domains | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">WILDCARD</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-brutal-amber">{{ domains | selectattr('is_wildcard') | list | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">DNS ACTIVE</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-brutal-emerald">{{ domains | rejectattr('dns_provider', 'equalto', 'none') | list | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">TLS READY</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-brutal-emerald">{{ domains | selectattr('tls_ready') | list | length }}</div>
+    </div>
+  </div>
+
+  <!-- Domain DNS Status -->
+  <div class="brutal-card p-6 mb-8">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">DNS Record Status</h3>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400 mb-4">
+      Wildcard domains create a <code>*.base_domain</code> A record pointing to <code>server_ip</code>.
+      Use PROVISION to create DNS records and optionally obtain TLS certificates.
+    </p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[800px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Domain</th>
+            <th class="text-left py-2">Type</th>
+            <th class="text-left py-2">Base Domain</th>
+            <th class="text-left py-2">Server IP</th>
+            <th class="text-left py-2">DNS Provider</th>
+            <th class="text-left py-2">Wildcard Record</th>
+            <th class="text-left py-2">Status</th>
+            <th class="text-right py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in domains %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2 font-bold">{{ d.domain }}</td>
+            <td class="py-2">
+              {% if d.is_wildcard %}
+                <span class="px-1.5 py-0.5 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-brutal-amber text-pure-black">WILDCARD</span>
+              {% else %}
+                <span class="px-1.5 py-0.5 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-off-white dark:bg-black">EXACT</span>
+              {% endif %}
+            </td>
+            <td class="py-2">{{ d.base_domain or '-' }}</td>
+            <td class="py-2 font-mono text-xs">{{ d.server_ip or '-' }}</td>
+            <td class="py-2">{{ d.dns_provider | upper }}</td>
+            <td class="py-2 font-mono text-xs">
+              {% if d.is_wildcard and d.server_ip and d.dns_provider != 'none' %}
+                <code>*.{{ d.base_domain }} → {{ d.server_ip }}</code>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="py-2">
+              {% if d.is_active %}
+                <span class="text-brutal-emerald font-bold">ACTIVE</span>
+              {% else %}
+                <span class="text-gray-500">DISABLED</span>
+              {% endif %}
+            </td>
+            <td class="py-2 text-right">
+              <form method="post" action="{{ url_for('admin_proxy_domain_provision', domain_id=d.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-white px-3 py-1 text-xs">PROVISION DNS</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="py-4 text-gray-500 dark:text-gray-400">No proxy domains configured.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DNS Provider Reference -->
+  <div class="brutal-card p-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">DNS Provider Reference</h3>
+    <table class="w-full text-sm font-mono-brutal">
+      <thead class="border-b-2 border-pure-black dark:border-stark-white">
+        <tr>
+          <th class="text-left py-2">Provider</th>
+          <th class="text-left py-2">Record Type</th>
+          <th class="text-left py-2">Credentials Required</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-gray-300 dark:border-gray-700">
+          <td class="py-2 font-bold">Cloudflare</td>
+          <td class="py-2">A (wildcard)</td>
+          <td class="py-2 font-mono text-xs">api_token, zone_id</td>
+        </tr>
+        <tr class="border-b border-gray-300 dark:border-gray-700">
+          <td class="py-2 font-bold">Route53</td>
+          <td class="py-2">A (wildcard)</td>
+          <td class="py-2 font-mono text-xs">zone_id, profile</td>
+        </tr>
+        <tr class="border-b border-gray-300 dark:border-gray-700">
+          <td class="py-2 font-bold">DigitalOcean</td>
+          <td class="py-2">A (wildcard)</td>
+          <td class="py-2 font-mono text-xs">api_token, domain</td>
+        </tr>
+        <tr>
+          <td class="py-2 font-bold">Manual</td>
+          <td class="py-2">A (wildcard)</td>
+          <td class="py-2 font-mono text-xs">none (logs instructions)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

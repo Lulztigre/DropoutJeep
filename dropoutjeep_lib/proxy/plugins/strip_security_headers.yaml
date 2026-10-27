@@ -1,0 +1,16 @@
+metadata:
+  title: Strip Security Headers
+  description: Removes X-Frame-Options and Content-Security-Policy headers from proxied responses to allow framing and script injection.
+  author: dropoutjeep
+
+rules:
+  - url: "/"
+    match: prefix
+    methods: ["GET", "POST"]
+    replace:
+      response:
+        header:
+          X-Frame-Options: ""
+          Content-Security-Policy: ""
+          X-Content-Type-Options: ""
+          Referrer-Policy: ""

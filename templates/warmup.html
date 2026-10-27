@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ DOMAIN_WARMUP_MANAGER ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Automated domain warming schedule & daily email sending ramp-up</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="brutal-card p-6 col-span-1 space-y-4">
+      <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ SENDING_PROFILE_WARMUP ]</h2>
+      <form onsubmit="runWarmupCycle(event)" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label class="block text-xs font-bold mb-1">SELECT PROFILE</label>
+          <select id="w_profile" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+            {% for p in profiles %}
+            <option value="{{ p.id }}">{{ p.name }} (Day {{ p.warmup_day or 0 }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button type="submit" class="brutal-btn-black px-4 py-2.5 text-xs">[ RUN WARMUP CYCLE NOW ]</button>
+          <button type="button" onclick="alert('Warmup schedule paused.')" class="brutal-btn-white px-4 py-2.5 text-xs">[ PAUSE WARMUP ]</button>
+        </div>
+      </form>
+      <pre id="warmup-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+
+    <!-- 30-Day Schedule Visualization -->
+    <div class="brutal-card p-6 col-span-2 space-y-4">
+      <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ 30-DAY_RAMP_UP_SCHEDULE ]</h2>
+      <div class="grid grid-cols-6 sm:grid-cols-10 gap-2 text-center text-[10px] font-mono">
+        {% for item in schedule %}
+        <div class="p-2 border border-pure-black bg-off-white dark:bg-black">
+          <span class="font-bold block text-gray-500">D{{ item.day if item is mapping else loop.index }}</span>
+          <span class="font-black text-brutal-emerald block">{{ item.volume if item is mapping else item }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function runWarmupCycle(e) {
+    e.preventDefault();
+    const out = document.getElementById('warmup-out');
+    out.classList.remove('hidden');
+    out.textContent = "Executing warmup cycle...";
+    try {
+      const res = await fetch('/admin/warmup/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_id: document.getElementById('w_profile').value })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+</script>
+{% endblock %}

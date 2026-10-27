@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ PYTHON_PLUGINS ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Manage Python proxy plugins for request/response manipulation.</p>
+    </div>
+    <div class="flex gap-3">
+      <form method="post" action="{{ url_for('admin_plugins_reload') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="px-4 py-2.5 brutal-btn-red font-mono-brutal text-xs">RELOAD PLUGINS</button>
+      </form>
+    </div>
+  </header>
+
+<!-- Plugin directory info -->
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] flex flex-wrap gap-4 items-center">
+  <span class="font-mono-brutal text-xs font-bold">PLUGIN_DIR:</span>
+  <code class="font-mono-brutal text-xs bg-off-white dark:bg-black px-2 py-1 border border-gray-300 dark:border-gray-700 break-all">{{ plugins_dir }}</code>
+  <span class="font-mono-brutal text-xs text-gray-500 ml-auto">{{ plugins | length }} loaded &bull; {{ disk_files | length }} file(s) on disk</span>
+</div>
+
+<!-- Loaded Plugins -->
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ LOADED_PLUGINS ]</h2>
+  {% if plugins %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for p in plugins %}
+    <div class="border-2 border-pure-black dark:border-stark-white p-4 hover:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] transition-shadow">
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-mono-brutal font-bold text-sm">{{ p.name }}</span>
+        <span class="font-mono-brutal text-xs px-2 py-0.5 border border-brutal-emerald text-brutal-emerald">ACTIVE</span>
+      </div>
+      <div class="font-mono-brutal text-xs text-gray-500 mb-3">
+        <div>Class: {{ p.class }}</div>
+        <div>Module: {{ p.module }}</div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% if p.has_on_request %}
+          <span class="px-1.5 py-0.5 text-xs border border-brutal-amber text-brutal-amber">on_request</span>
+        {% endif %}
+        {% if p.has_on_response %}
+          <span class="px-1.5 py-0.5 text-xs border border-brutal-amber text-brutal-amber">on_response</span>
+        {% endif %}
+        {% if p.has_on_exchange %}
+          <span class="px-1.5 py-0.5 text-xs border border-brutal-amber text-brutal-amber">on_exchange</span>
+        {% endif %}
+        {% if p.has_on_playwright %}
+          <span class="px-1.5 py-0.5 text-xs border border-brutal-amber text-brutal-amber">on_playwright</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-8">
+    No Python plugins loaded. Place .py files in the plugins_py/ directory with a top-level <code>plugin</code> variable.
+  </p>
+  {% endif %}
+</div>
+
+<!-- Disk Files -->
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ FILES_ON_DISK ]</h2>
+  {% if disk_files %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-left font-mono-brutal text-xs">
+      <thead>
+        <tr class="border-b-2 border-pure-black dark:border-stark-white">
+          <th class="p-2 uppercase">Filename</th>
+          <th class="p-2 uppercase">Size</th>
+          <th class="p-2 uppercase">Modified</th>
+          <th class="p-2 uppercase">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in disk_files %}
+        <tr class="border-b border-gray-200 dark:border-gray-800">
+          <td class="p-2 font-bold">{{ f.name }}</td>
+          <td class="p-2">{{ f.size }} bytes</td>
+          <td class="p-2">{{ f.modified.strftime('%Y-%m-%d %H:%M') if f.modified else '-' }}</td>
+          <td class="p-2">
+            {% set loaded_names = plugins | map(attribute='name') | list %}
+            {% set module_name = f.name.replace('.py', '') %}
+            {% if module_name in loaded_names or plugins | selectattr('module', 'contains', module_name) | list %}
+              <span class="text-brutal-emerald font-bold">LOADED</span>
+            {% else %}
+              <span class="text-brutal-amber">ON DISK</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-8">
+    No .py files found in the plugins directory.
+  </p>
+  {% endif %}
+</div>
+</div>
+{% endblock %}

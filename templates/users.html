@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ USER_MANAGEMENT ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Accounts, roles, and access control registry</p>
+    </div>
+    <a href="{{ url_for('admin_user_new') }}" class="px-4 py-2.5 brutal-btn-black text-xs text-center">
+      [ CREATE USER ]
+    </a>
+  </header>
+
+  <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-sm">
+        <thead>
+          <tr class="border-b-2 border-pure-black text-gray-700 text-xs">
+            <th class="py-3 px-2 font-bold">USERNAME</th>
+            <th class="py-3 px-2 font-bold">ROLE</th>
+            <th class="py-3 px-2 font-bold">STATUS</th>
+            <th class="py-3 px-2 font-bold">CREATED</th>
+            <th class="py-3 px-2 text-right font-bold">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr class="border-b border-off-white hover:bg-off-white transition-colors">
+            <td class="py-3 px-2 text-pure-black font-extrabold">{{ user.username }}</td>
+            <td class="py-3 px-2 font-bold uppercase">{{ user.role }}</td>
+            <td class="py-3 px-2">
+              {% if user.is_active %}
+              <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-brutal-emerald text-white uppercase">ACTIVE</span>
+              {% else %}
+              <span class="px-2 py-0.5 text-xs font-bold border border-pure-black bg-stark-white text-gray-500 uppercase">DISABLED</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-2 text-xs text-gray-500 font-bold">{{ user.created_at }}</td>
+            <td class="py-3 px-2 text-right">
+              <div class="flex justify-end gap-2 text-xs font-bold">
+                <form method="post" action="{{ url_for('admin_user_toggle', user_id=user.id) }}" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="px-3 py-1 border-2 border-pure-black bg-stark-white hover:bg-pure-black hover:text-white transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                    {{ 'DISABLE' if user.is_active else 'ENABLE' }}
+                  </button>
+                </form>
+                <form method="post" action="{{ url_for('admin_user_delete', user_id=user.id) }}" class="inline"
+                      onsubmit="return confirm('[DESTROY] Delete user {{ user.username }}?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="px-3 py-1 border-2 border-brutal-red text-brutal-red bg-stark-white hover:bg-brutal-red hover:text-white transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                    [DELETE]
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="p-8 text-center text-gray-500 font-mono-brutal font-bold" colspan="5">
+              [ NO USERS CREATED ]
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-10 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ PRE_LAUNCH_VALIDATION ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Preflight analysis results for Campaign #{{ campaign.id }} ({{ campaign.name }})</p>
+  </header>
+
+  {% if result and result.warnings %}
+    <div class="border-4 border-brutal-amber bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8">
+      <h2 class="text-sm font-black text-brutal-amber mb-3 uppercase">&gt; PREFLIGHT WARNINGS:</h2>
+      <ul class="list-disc pl-6 space-y-2 text-sm text-pure-black font-bold">
+        {% for w in result.warnings %}
+        <li>{{ w }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if result and not result.ok %}
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8">
+      <h2 class="text-sm font-black text-brutal-red mb-3 uppercase">&gt; ENCOUNTERED PREFLIGHT ERRORS:</h2>
+      <ul class="list-disc pl-6 space-y-2 text-sm text-pure-black font-bold">
+        {% for e in result.errors %}
+        <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <!-- Detailed Checks -->
+  {% if result and result.checks %}
+  <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8">
+    <h2 class="text-sm font-black text-pure-black mb-4 uppercase">&gt; CHECK DETAILS:</h2>
+
+    {% if result.checks.spf %}
+    <div class="mb-3">
+      <span class="text-xs font-bold">SPF:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.spf.ok else 'text-brutal-red' }}">
+        {{ 'PASS' if result.checks.spf.ok else 'FAIL' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">{{ result.checks.spf.txt }}</p>
+    </div>
+    {% endif %}
+
+    {% if result.checks.dkim %}
+    <div class="mb-3">
+      <span class="text-xs font-bold">DKIM:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.dkim.ok else 'text-brutal-red' }}">
+        {{ 'PASS' if result.checks.dkim.ok else 'FAIL' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">{{ result.checks.dkim.txt }}</p>
+    </div>
+    {% endif %}
+
+    {% if result.checks.smtp %}
+    <div class="mb-3">
+      <span class="text-xs font-bold">SMTP:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.smtp.ok else 'text-brutal-red' }}">
+        {{ 'PASS' if result.checks.smtp.ok else 'FAIL' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">{{ result.checks.smtp.txt }}</p>
+    </div>
+    {% endif %}
+
+    {% if result.checks.dmarc %}
+    <div class="mb-3">
+      <span class="text-xs font-bold">DMARC:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.dmarc.ok else 'text-brutal-red' }}">
+        {{ 'PASS' if result.checks.dmarc.ok else 'FAIL' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">{{ result.checks.dmarc.txt }}</p>
+    </div>
+    {% endif %}
+
+    {% if result.checks.bimi %}
+    <div class="mb-3">
+      <span class="text-xs font-bold">BIMI RECORD:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.bimi.ok else 'text-brutal-amber' }}">
+        {{ 'PASS' if result.checks.bimi.ok else 'NOT DETECTED' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">{{ result.checks.bimi.txt }}</p>
+    </div>
+    {% endif %}
+
+    {% if result.checks.fbl %}
+    <div class="mb-3">
+      <span class="text-xs font-bold">FBL REGISTRATION:</span>
+      <span class="text-xs font-bold text-brutal-emerald">
+        REGISTERED / ACTIVE
+      </span>
+      <p class="text-xs text-gray-600 font-mono">Spam complaint rate: {{ result.checks.fbl.info.rate or '0.0%' }}</p>
+    </div>
+    {% endif %}
+
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">SAFE LINKS AWARENESS:</span>
+      <span class="text-xs font-bold text-brutal-emerald font-mono">
+        MODE: {{ campaign.safelinks_mode | upper if campaign.safelinks_mode else 'STANDARD' }}
+      </span>
+    </div>
+
+    {% if result.checks.recipients %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">RECIPIENTS:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.recipients.total > 0 else 'text-brutal-red' }}">
+        {{ result.checks.recipients.total }} total · {{ result.checks.recipients.unsent }} unsent
+      </span>
+    </div>
+    {% endif %}
+
+    {% if result.checks.suppressions %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">SUPPRESSIONS:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.suppressions.count == 0 else 'text-brutal-amber' }}">
+        {{ result.checks.suppressions.count }} hit(s)
+      </span>
+      {% if result.checks.suppressions.emails %}
+      <p class="text-xs text-gray-600 font-mono">{{ result.checks.suppressions.emails | join(', ') }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if result.checks.proxy_domain %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">PROXY DOMAIN:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.proxy_domain.present and result.checks.proxy_domain.tls_ready else ('text-brutal-red' if not result.checks.proxy_domain.present else 'text-brutal-amber') }}">
+        {% if result.checks.proxy_domain.present %}
+          {{ result.checks.proxy_domain.domain }} · TLS {{ 'READY' if result.checks.proxy_domain.tls_ready else 'NOT READY' }}
+        {% else %}
+          NOT PROVISIONED
+        {% endif %}
+      </span>
+    </div>
+    {% endif %}
+
+    {% if result.checks.domain_reputation %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">DOMAIN REPUTATION:</span>
+      {% set dr = result.checks.domain_reputation %}
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if dr.warmup_ok else 'text-brutal-red' }}">
+        {{ dr.overall_score }}/100 · {{ 'WARMUP OK' if dr.warmup_ok else 'WARMUP BLOCKED' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">{{ dr.warmup_message }}</p>
+      {% if dr.virus_total_score is not none %}
+      <p class="text-xs text-gray-600 font-mono">VirusTotal: {{ dr.virus_total_score }}/100</p>
+      {% endif %}
+      {% if dr.domain_age_days is not none %}
+      <p class="text-xs text-gray-600 font-mono">Domain age: {{ dr.domain_age_days }} days</p>
+      {% endif %}
+      {% if dr.blacklist_flags %}
+      <p class="text-xs text-brutal-red font-mono">Blacklists: {{ dr.blacklist_flags | join(', ') }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if result.checks.alignment %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">ALIGNMENT:</span>
+      <span class="text-xs font-bold {{ 'text-brutal-emerald' if result.checks.alignment.domains_aligned else 'text-brutal-amber' }}">
+        {{ 'ALIGNED' if result.checks.alignment.domains_aligned else 'MISALIGNED' }}
+      </span>
+      <p class="text-xs text-gray-600 font-mono">
+        From: {{ result.checks.alignment.from_domain }} · Envelope: {{ result.checks.alignment.envelope_domain }}
+      </p>
+    </div>
+    {% endif %}
+
+    {% if campaign.sender_rotation_pool %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold">SENDER ROTATION:</span>
+      <span class="text-xs font-bold text-brutal-emerald">ENABLED</span>
+      <p class="text-xs text-gray-600 font-mono">Pool: {{ campaign.sender_rotation_pool.name }} ({{ campaign.sender_rotation_pool.entries | length }} identities)</p>
+    </div>
+    {% endif %}
+
+    {% if campaign.sandbox_evasion_enabled %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold text-brutal-red">SANDBOX EVASION:</span>
+      <span class="text-xs font-bold text-brutal-red">ENABLED</span>
+    </div>
+    {% endif %}
+
+    {% if campaign.html_smuggling_enabled %}
+    <div class="mb-3 border-t-2 border-pure-black pt-3">
+      <span class="text-xs font-bold text-brutal-red">HTML SMUGGLING:</span>
+      <span class="text-xs font-bold text-brutal-red">ENABLED</span>
+      <p class="text-xs text-gray-600 font-mono">Filename: {{ campaign.html_smuggling_filename or 'document.bin' }}</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if result and not result.ok %}
+    <form action="/admin/campaign/{{ campaign.id }}/send" method="post" class="flex gap-4 items-center">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="py-3 px-6 brutal-btn-red text-xs font-extrabold tracking-wider text-white">
+        [ FORCE LAUNCH ANYWAY ]
+      </button>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+        [ CANCEL ]
+      </a>
+    </form>
+  {% else %}
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8">
+      <h2 class="text-sm font-black text-brutal-emerald uppercase">&gt; ALL CHECKPOINTS VALIDATED:</h2>
+      <p class="text-sm text-pure-black font-bold mt-2">SPF, DKIM alignment, DNS standing, SMTP pool, and domain reputation checks are clean. Campaign is cleared for dispatch.</p>
+    </div>
+
+    <form action="/admin/campaign/{{ campaign.id }}/send" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="py-3 px-8 brutal-btn-black text-xs font-extrabold tracking-wider">
+        [ DISPATCH CAMPAIGN ]
+      </button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

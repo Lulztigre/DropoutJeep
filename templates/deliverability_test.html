@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ DELIVERABILITY_TEST ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Run validation checks for SPF, DKIM, DMARC, and SMTP connectivity</p>
+  </header>
+
+  <form method="post" class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 text-sm font-bold">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div>
+      <label class="block text-xs font-bold text-pure-black mb-1.5">DOMAIN TO TEST <span class="text-brutal-red">*</span></label>
+      <input type="text" name="domain" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="example.com" required>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-pure-black mb-1.5">DKIM SELECTOR (OPTIONAL)</label>
+      <input type="text" name="selector" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="ph1">
+    </div>
+
+    <button type="submit" class="w-full py-3 brutal-btn-black text-xs font-extrabold tracking-wider mt-4">
+      [ RUN DELIVERABILITY TEST ]
+    </button>
+  </form>
+</div>
+{% endblock %}

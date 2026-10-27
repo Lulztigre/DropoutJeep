@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+    <div class="mb-6">
+        <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+            </svg>
+            [ BACK TO DASHBOARD ]
+        </a>
+    </div>
+
+    <header class="mb-8 border-b-4 border-pure-black pb-6">
+        <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ DOMAIN_REPUTATION ]</h1>
+        <p class="text-sm text-brutal-red font-bold">&gt; Categorization, blacklist, and warmup status for sending domains</p>
+    </header>
+
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+        {% if reps %}
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="border-b-2 border-pure-black">
+                    <th class="text-left p-2">DOMAIN</th>
+                    <th class="text-left p-2">SCORE</th>
+                    <th class="text-left p-2">WARMUP</th>
+                    <th class="text-left p-2">VT</th>
+                    <th class="text-left p-2">AGE (DAYS)</th>
+                    <th class="text-left p-2">AUTH</th>
+                    <th class="text-left p-2">BLACKLISTS</th>
+                    <th class="text-left p-2">LAST CHECK</th>
+                    <th class="text-left p-2">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reps %}
+                <tr class="border-b border-gray-200">
+                    <td class="p-2 font-bold">{{ r.domain }}</td>
+                    <td class="p-2">
+                        <span class="font-bold {{ 'text-brutal-emerald' if r.overall_score >= 70 else ('text-brutal-amber' if r.overall_score >= 40 else 'text-brutal-red') }}">
+                            {{ r.overall_score }}/100
+                        </span>
+                    </td>
+                    <td class="p-2">L{{ r.warmup_level }}</td>
+                    <td class="p-2">{{ r.virus_total_score if r.virus_total_score is not none else '-' }}</td>
+                    <td class="p-2">{{ r.domain_age_days if r.domain_age_days is not none else '-' }}</td>
+                    <td class="p-2 font-mono">
+                        SPF:{{ 'Y' if r.spf_ok else 'N' }}
+                        DKIM:{{ 'Y' if r.dkim_ok else 'N' }}
+                        DMARC:{{ 'Y' if r.dmarc_ok else 'N' }}
+                    </td>
+                    <td class="p-2">
+                        {% if r.get_blacklist_flags() %}
+                        <span class="text-brutal-red font-bold">{{ r.get_blacklist_flags() | join(', ') }}</span>
+                        {% else %}
+                        Clean
+                        {% endif %}
+                    </td>
+                    <td class="p-2 text-gray-500">{{ r.last_checked_at.strftime('%Y-%m-%d %H:%M UTC') if r.last_checked_at else 'Never' }}</td>
+                    <td class="p-2">
+                        <a href="{{ url_for('admin_domain_reputation_refresh', domain=r.domain) }}" class="text-brutal-red hover:underline font-bold">Refresh</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-sm text-gray-500 font-bold">No reputation records yet. Run a campaign preflight check to populate the first record.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

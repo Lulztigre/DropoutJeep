@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  
+  <!-- Header -->
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ SYSTEM_LOGS ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Telemetry registries, dispatch audits, and access attempts</p>
+  </header>
+
+  <!-- Control Panel & Tabs -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    
+    <!-- Brutalist Tab selector -->
+    <div class="flex gap-2">
+      <button class="log-tab active px-4 py-2.5 border-2 border-pure-black text-stark-white bg-pure-black font-extrabold text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase" data-type="campaign">
+        CAMPAIGNS
+      </button>
+      <button class="log-tab px-4 py-2.5 border-2 border-pure-black text-pure-black bg-stark-white hover:bg-off-white font-extrabold text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase" data-type="replies">
+        REPLIES
+      </button>
+      <button class="log-tab px-4 py-2.5 border-2 border-pure-black text-pure-black bg-stark-white hover:bg-off-white font-extrabold text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase" data-type="errors">
+        ERRORS / ALERTS
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-3 text-xs font-bold">
+      <a id="exportLink" href="/admin/logs/export/campaign" class="px-4 py-2.5 border-2 border-pure-black text-pure-black bg-stark-white hover:bg-pure-black hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        [ EXPORT CSV ]
+      </a>
+      <form id="clearForm" method="post" action="/admin/logs/clear/campaign" class="inline" onsubmit="return confirm('[DESTROY] Are you sure you want to clear these log records?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="px-4 py-2.5 border-2 border-pure-black text-white bg-brutal-red hover:bg-stark-white hover:text-brutal-red transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          [ CLEAR LOGS ]
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Logs Table -->
+  <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-sm" id="logTable">
+        <thead>
+          <tr class="border-b-2 border-pure-black text-gray-700 text-xs">
+            <th class="py-3 px-2 font-bold">TIMESTAMP (UTC)</th>
+            <th class="py-3 px-2 font-bold">EVENT TYPE</th>
+            <th class="py-3 px-2 font-bold">CAMPAIGN ID</th>
+            <th class="py-3 px-2 font-bold">RECIPIENT ID</th>
+            <th class="py-3 px-2 font-bold">METADATA DETAILS</th>
+          </tr>
+        </thead>
+        <tbody id="logBody">
+          <!-- Fetch entries injected here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentLogType = 'campaign';
+
+function badgeClass(type) {
+  if (['sent', 'open', 'click', 'visit'].includes(type)) {
+    if (type === 'sent') return 'border-pure-black bg-stark-white text-pure-black';
+    if (type === 'open') return 'bg-brutal-emerald text-white';
+    return 'bg-brutal-amber text-pure-black';
+  }
+  if (type === 'auto_reply') return 'bg-pure-black text-white';
+  if (['bounce', 'send_failed', 'credential_attempt'].includes(type)) return 'bg-brutal-red text-white';
+  return 'bg-off-white text-gray-700 border border-pure-black';
+}
+
+document.querySelectorAll('.log-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    // Reset all tabs
+    document.querySelectorAll('.log-tab').forEach(t => {
+      t.classList.remove('active', 'bg-pure-black', 'text-stark-white');
+      t.classList.add('bg-stark-white', 'text-pure-black');
+    });
+    // Set active tab
+    tab.classList.remove('bg-stark-white', 'text-pure-black');
+    tab.classList.add('active', 'bg-pure-black', 'text-stark-white');
+    
+    currentLogType = tab.dataset.type;
+    document.getElementById('exportLink').href = `/admin/logs/export/${currentLogType}`;
+    document.getElementById('clearForm').action = `/admin/logs/clear/${currentLogType}`;
+    loadLogs(currentLogType);
+  });
+});
+
+async function loadLogs(type) {
+  const tbody = document.getElementById('logBody');
+  tbody.innerHTML = '<tr><td class="p-4 text-center text-gray-500 font-bold animate-pulse" colspan="5">[ QUERYING TELEMETRY ENGINE... ]</td></tr>';
+  
+  try {
+    const res = await fetch(`/admin/logs/${type}`);
+    if (!res.ok) throw new Error('Fetch failed');
+    const events = await res.json();
+    
+    if (!events.length) {
+      tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-500 font-bold" colspan="5">[ NO REGISTERED EVENTS FOR THIS REGISTRY ]</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = events.map(e => `
+      <tr class="border-b border-off-white hover:bg-off-white transition-colors">
+        <td class="py-3 px-2 text-xs font-bold text-gray-500 whitespace-nowrap">${e.time || ''}</td>
+        <td class="py-3 px-2">
+          <span class="px-2 py-0.5 text-xs font-bold border border-pure-black ${badgeClass(e.type)} uppercase">${e.type}</span>
+        </td>
+        <td class="py-3 px-2 text-pure-black font-extrabold">Campaign #${e.campaign_id || 'N/A'}</td>
+        <td class="py-3 px-2 text-gray-800">Recipient #${e.recipient_id || 'N/A'}</td>
+        <td class="py-3 px-2 text-xs text-gray-600 break-all select-all font-mono" title="${e.meta || ''}">${e.meta || 'no-meta-payload'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td class="p-8 text-center text-brutal-red font-bold" colspan="5">[ DATABASE QUERY ERROR: UNAUTHORIZED OR CONNECTION FAILED ]</td></tr>';
+  }
+}
+
+// Initial load
+loadLogs('campaign');
+</script>
+{% endblock %}

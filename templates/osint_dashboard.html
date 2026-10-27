@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ OSINT_RECON_DASHBOARD ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Automated LinkedIn scraping & breach database lookup for pretext generation</p>
+  </header>
+
+  <!-- Tab Buttons -->
+  <div class="flex gap-4 mb-6">
+    <button onclick="switchTab('tab-linkedin')" id="btn-linkedin" class="brutal-btn-black px-6 py-2 text-xs">TAB A: LINKEDIN OSINT</button>
+    <button onclick="switchTab('tab-breach')" id="btn-breach" class="brutal-btn-white px-6 py-2 text-xs">TAB B: BREACH LOOKUP</button>
+  </div>
+
+  <!-- Tab A: LinkedIn OSINT -->
+  <div id="tab-linkedin" class="brutal-card p-6 space-y-6">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ LINKEDIN_PROFILE_SCRAPER ]</h2>
+    <form id="linkedin-form" onsubmit="runLinkedinScrape(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">TARGET NAME *</label>
+          <input type="text" id="li_name" required placeholder="Jane Doe" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">TARGET COMPANY *</label>
+          <input type="text" id="li_company" required placeholder="Acme Corp" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">OPTIONAL EMAIL</label>
+          <input type="email" id="li_email" placeholder="jane@acme.corp" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <button type="submit" id="li-scrape-btn" class="brutal-btn-black px-6 py-2 text-xs">[ SCRAPE PROFILE ]</button>
+        <button type="button" onclick="generateLinkedinPretext()" class="brutal-btn-white px-6 py-2 text-xs">[ GENERATE PRETEXT BRIEF ]</button>
+      </div>
+    </form>
+
+    <div id="li-results" class="hidden space-y-4 border-t-2 border-pure-black dark:border-stark-white pt-4">
+      <h3 class="text-sm font-bold text-brutal-emerald">&gt; SCRAPED RECONNAISSANCE RESULTS:</h3>
+      <pre id="li-output" class="bg-black text-emerald-400 p-4 font-mono text-xs overflow-x-auto border-2 border-pure-black dark:border-stark-white min-h-[150px]"></pre>
+    </div>
+  </div>
+
+  <!-- Tab B: Breach Data Lookup -->
+  <div id="tab-breach" class="brutal-card p-6 space-y-6 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ BREACH_DATABASE_LOOKUP ]</h2>
+    <form id="breach-form" onsubmit="runBreachLookup(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">TARGET EMAIL *</label>
+          <input type="email" id="br_email" required placeholder="target@victim.com" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">PROVIDER</label>
+          <select id="br_provider" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="dehashed">DeHashed API</option>
+            <option value="intelx">IntelX API</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">API KEY (OPTIONAL)</label>
+          <input type="password" id="br_key" placeholder="Leave blank to use server setting" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ LOOKUP BREACH DATA ]</button>
+        <button type="button" onclick="generatePasswordPretext()" class="brutal-btn-white px-6 py-2 text-xs">[ GENERATE PASSWORD PRETEXT ]</button>
+      </div>
+    </form>
+
+    <div id="br-results" class="hidden space-y-4 border-t-2 border-pure-black dark:border-stark-white pt-4">
+      <h3 class="text-sm font-bold text-brutal-emerald">&gt; BREACH DATA RESULTS:</h3>
+      <pre id="br-output" class="bg-black text-emerald-400 p-4 font-mono text-xs overflow-x-auto border-2 border-pure-black dark:border-stark-white min-h-[150px]"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabId) {
+    document.getElementById('tab-linkedin').classList.add('hidden');
+    document.getElementById('tab-breach').classList.add('hidden');
+    document.getElementById(tabId).classList.remove('hidden');
+
+    if (tabId === 'tab-linkedin') {
+      document.getElementById('btn-linkedin').className = 'brutal-btn-black px-6 py-2 text-xs';
+      document.getElementById('btn-breach').className = 'brutal-btn-white px-6 py-2 text-xs';
+    } else {
+      document.getElementById('btn-linkedin').className = 'brutal-btn-white px-6 py-2 text-xs';
+      document.getElementById('btn-breach').className = 'brutal-btn-black px-6 py-2 text-xs';
+    }
+  }
+
+  async function runLinkedinScrape(e) {
+    e.preventDefault();
+    document.getElementById('li-results').classList.remove('hidden');
+    document.getElementById('li-output').textContent = "Scraping LinkedIn profile data... Please wait.";
+    try {
+      const res = await fetch('/admin/osint/linkedin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('li_name').value,
+          company: document.getElementById('li_company').value,
+          email: document.getElementById('li_email').value,
+          action: 'scrape'
+        })
+      });
+      const data = await res.json();
+      document.getElementById('li-output').textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      document.getElementById('li-output').textContent = "Error running LinkedIn scrape: " + err;
+    }
+  }
+
+  async function generateLinkedinPretext() {
+    document.getElementById('li-results').classList.remove('hidden');
+    document.getElementById('li-output').textContent = "Generating pretext brief from profile data...";
+    try {
+      const res = await fetch('/admin/osint/linkedin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('li_name').value,
+          company: document.getElementById('li_company').value,
+          email: document.getElementById('li_email').value,
+          action: 'pretext'
+        })
+      });
+      const data = await res.json();
+      document.getElementById('li-output').textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      document.getElementById('li-output').textContent = "Error generating pretext: " + err;
+    }
+  }
+
+  async function runBreachLookup(e) {
+    e.preventDefault();
+    document.getElementById('br-results').classList.remove('hidden');
+    document.getElementById('br-output').textContent = "Querying breach databases... Please wait.";
+    try {
+      const res = await fetch('/admin/osint/breach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('br_email').value,
+          provider: document.getElementById('br_provider').value,
+          api_key: document.getElementById('br_key').value,
+          action: 'lookup'
+        })
+      });
+      const data = await res.json();
+      document.getElementById('br-output').textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      document.getElementById('br-output').textContent = "Error querying breach data: " + err;
+    }
+  }
+
+  async function generatePasswordPretext() {
+    document.getElementById('br-results').classList.remove('hidden');
+    document.getElementById('br-output').textContent = "Generating password compromise pretext...";
+    try {
+      const res = await fetch('/admin/osint/breach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('br_email').value,
+          provider: document.getElementById('br_provider').value,
+          api_key: document.getElementById('br_key').value,
+          action: 'pretext'
+        })
+      });
+      const data = await res.json();
+      document.getElementById('br-output').textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      document.getElementById('br-output').textContent = "Error generating pretext: " + err;
+    }
+  }
+</script>
+{% endblock %}

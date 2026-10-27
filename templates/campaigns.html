@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+    <!-- Navigation Back Link -->
+    <div class="mb-6">
+        <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+            </svg>
+            [ BACK TO DASHBOARD ]
+        </a>
+    </div>
+
+    <!-- Header -->
+    <header class="mb-8 border-b-4 border-pure-black pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ CAMPAIGNS_LEDGER ]</h1>
+            <p class="text-sm text-brutal-red font-bold">&gt; Registered security awareness campaigns</p>
+        </div>
+        <div class="flex gap-2">
+            <button type="button" id="compare-btn" class="px-4 py-2.5 border-2 border-pure-black dark:border-stark-white text-pure-black dark:text-stark-white bg-[var(--dj-card)] hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black text-xs text-center transition-all">
+                [ COMPARE SELECTED ]
+            </button>
+            <a class="px-4 py-2.5 brutal-btn-black text-xs text-center flex items-center gap-2" href="/admin/campaign/new">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
+                </svg>
+                [ NEW CAMPAIGN ]
+            </a>
+        </div>
+    </header>
+
+    <!-- Campaigns List -->
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left font-mono-brutal text-sm min-w-[900px]">
+                <thead>
+                    <tr class="border-b-2 border-pure-black dark:border-stark-white text-gray-600 dark:text-gray-400 text-xs">
+                        <th class="py-3 px-2 font-bold"><input type="checkbox" id="select-all" title="Select all"></th>
+                        <th class="py-3 px-2 font-bold">ID</th>
+                        <th class="py-3 px-2 font-bold">CAMPAIGN NAME</th>
+                        <th class="py-3 px-2 font-bold">STATUS</th>
+                        <th class="py-3 px-2 font-bold">SENDING PROFILE</th>
+                        <th class="py-3 px-2 font-bold">CREATED</th>
+                        <th class="py-3 px-2 font-bold">RECIPIENTS</th>
+                        <th class="py-3 px-2 text-right font-bold">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in campaigns %}
+                    <tr class="border-b border-off-white dark:border-gray-800 hover:bg-off-white dark:hover:bg-gray-900 transition-colors">
+                        <td class="py-3 px-2"><input type="checkbox" name="campaign_ids" value="{{ c.id }}" class="compare-checkbox"></td>
+                        <td class="py-3 px-2 text-gray-500 dark:text-gray-400 font-bold">#{{ c.id }}</td>
+                        <td class="py-3 px-2"><a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=c.id) }}" class="text-[var(--dj-fg)] font-extrabold hover:text-brutal-red transition-colors underline decoration-2 decoration-transparent hover:decoration-brutal-red">{{ c.name }}</a></td>
+                        <td class="py-3 px-2">
+                            <span class="px-2 py-0.5 text-[10px] font-bold border border-pure-black dark:border-stark-white {{ c.get_status_color() }} uppercase">[{{ c.get_status() }}]</span>
+                        </td>
+                        <td class="py-3 px-2 font-bold text-gray-700 dark:text-gray-300">{{ c.sending_profile.name if c.sending_profile else 'none' }}</td>
+                        <td class="py-3 px-2 text-xs text-gray-500 dark:text-gray-400 font-bold">{{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '-' }}</td>
+                        <td class="py-3 px-2 text-[var(--dj-fg)] font-bold">
+                            {{ c.get_sent_count() }}/{{ c.get_recipient_count() }}
+                        </td>
+                        <td class="py-3 px-2 text-right">
+                            <div class="flex justify-end gap-1 text-xs font-bold flex-wrap">
+                                {% if c.get_status() in ('draft', 'ready', 'unsent') %}
+                                <a class="px-2 py-1 border-2 border-pure-black dark:border-stark-white text-stark-white bg-pure-black hover:bg-stark-white hover:text-pure-black dark:hover:bg-pure-black dark:hover:text-stark-white transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" href="/admin/campaign/{{ c.id }}/validate">[LAUNCH]</a>
+                                {% endif %}
+                                <a class="px-2 py-1 border-2 border-pure-black dark:border-stark-white text-pure-black dark:text-stark-white bg-[var(--dj-card)] hover:bg-pure-black hover:text-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" href="{{ url_for('campaigns_admin.admin_campaign_edit', cid=c.id) }}">[EDIT]</a>
+                                <a class="px-2 py-1 border-2 border-gray-600 text-gray-600 bg-[var(--dj-card)] hover:bg-gray-600 hover:text-white transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" href="{{ url_for('campaigns_admin.admin_campaign_info', cid=c.id) }}">[INFO]</a>
+                                {% if c.schedule_enabled %}
+                                <button class="px-2 py-1 border-2 border-brutal-red text-brutal-red bg-[var(--dj-card)] hover:bg-brutal-red hover:text-white transition-all shadow-[1px_1px_0px_0px_rgba(225,29,72,1)]" onclick="disableSchedule({{ c.id }})">[UNSCHEDULE]</button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="p-8 text-center text-gray-500 dark:text-gray-400 font-mono-brutal" colspan="8">
+                            [ NO CAMPAIGNS REGISTERED ]
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+async function disableSchedule(cid) {
+  if (!confirm('DISABLE SCHEDULED LAUNCH FOR THIS CAMPAIGN?')) return;
+  await fetch(`/api/campaign/${cid}/schedule/disable`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken() }
+  });
+  window.location.reload();
+}
+
+document.getElementById('select-all')?.addEventListener('change', (e) => {
+  document.querySelectorAll('.compare-checkbox').forEach(cb => cb.checked = e.target.checked);
+});
+
+document.getElementById('compare-btn')?.addEventListener('click', () => {
+  const ids = Array.from(document.querySelectorAll('.compare-checkbox:checked')).map(cb => cb.value).join(',');
+  if (!ids || ids.split(',').length < 2) {
+    alert('SELECT AT LEAST TWO CAMPAIGNS TO COMPARE.');
+    return;
+  }
+  window.location.href = `/admin/campaigns/compare?campaign_ids=${ids}`;
+});
+</script>
+{% endblock %}

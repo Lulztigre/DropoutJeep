@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold font-mono-brutal tracking-tight text-[var(--dj-fg)] mb-2">[ QR_CODES ]</h1>
+      <p class="text-sm font-mono-brutal text-brutal-red font-bold">&gt; {{ campaign.name }}</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-white font-mono-brutal text-xs">INFO</a>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_edit', cid=campaign.id) }}" class="px-3 py-2 brutal-btn-black font-mono-brutal text-xs">EDIT</a>
+    </div>
+  </header>
+
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <p class="font-mono-brutal text-xs text-gray-500 mb-4">
+      Use <code class="bg-off-white dark:bg-black px-1 py-0.5 border border-gray-300 dark:border-gray-700">{{ '{{QR_CODE}}' }}</code> in the email template body.
+      Each recipient gets a unique QR code pointing at their tracked link.
+    </p>
+    <div class="flex items-center gap-3">
+      {% if campaign.get_flow_config().get('qr_code_enabled') %}
+      <span class="px-2 py-1 text-xs font-bold border border-brutal-emerald text-brutal-emerald">QR ENABLED</span>
+      {% else %}
+      <span class="px-2 py-1 text-xs font-bold border border-brutal-red text-brutal-red">QR DISABLED</span>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_edit', cid=campaign.id) }}" class="text-xs font-bold underline text-brutal-red">Enable in campaign edit</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {% for r in recipients %}
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+      <div class="font-mono-brutal text-xs font-bold mb-2 truncate" title="{{ r.email }}">{{ r.email }}</div>
+      <div class="font-mono-brutal text-[10px] text-gray-500 mb-3">TOKEN: {{ r.token[:16] }}...</div>
+      <div class="flex justify-center bg-white p-2 border-2 border-pure-black dark:border-stark-white">
+        {{ qr_images[r.id] | safe }}
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-full text-center font-mono-brutal text-gray-500 py-12">
+      No recipients found. Import recipients to generate QR codes.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 font-mono-brutal">
+
+  <div class="mb-6">
+    <a href="{{ url_for('sending_admin.admin_subsidiaries') }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      [ BACK TO SUBSIDIARIES ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ EDIT_SUBSIDIARY ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; {{ sub.name }}</p>
+  </header>
+
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <form method="post" class="space-y-4 text-xs">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div>
+        <label class="block font-bold mb-1">SUBSIDIARY NAME <span class="text-brutal-red">*</span></label>
+        <input type="text" name="name" required value="{{ sub.name }}" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+        <p class="mt-1 opacity-70">Your label. Nothing in the mail comes from it.</p>
+      </div>
+
+      <div>
+        <label class="block font-bold mb-1">SENDING DOMAIN <span class="text-brutal-red">*</span></label>
+        <input type="text" name="sending_domain" required value="{{ sub.sending_domain }}" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+        <p class="mt-1 opacity-70">The domain you own and publish DKIM for. Never the target's domain.</p>
+      </div>
+
+      <div>
+        <label class="block font-bold mb-1">DISPLAY NAME <span class="text-brutal-red">*</span></label>
+        <input type="text" name="display_name" required value="{{ sub.display_name }}" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+        <p class="mt-1 opacity-70">What the recipient sees in the sender column.</p>
+      </div>
+
+      <div>
+        <label class="block font-bold mb-1">FROM ADDRESS <span class="text-brutal-red">*</span></label>
+        <input type="email" name="from_address" required value="{{ sub.from_address }}" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+        <p class="mt-1 opacity-70">Must be a real mailbox for a delivery arm. Put the target's domain here only for the spoof arm.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-bold mb-1">BOUNCE SUBDOMAIN</label>
+          <input type="text" name="bounce_subdomain" value="{{ sub.bounce_subdomain or '' }}" placeholder="leave blank, or a domain you own" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+          <p class="mt-1 opacity-70">Blank gives an envelope of bounce@{{ sub.sending_domain }}.</p>
+        </div>
+        <div>
+          <label class="block font-bold mb-1">DKIM SELECTOR</label>
+          <input type="text" name="dkim_selector" value="{{ sub.dkim_selector or '' }}" placeholder="the TXT label, eg dkim2" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-[var(--dj-fg)]">
+          <p class="mt-1 opacity-70">TXT record: {{ sub.dkim_selector or '<selector>' }}._domainkey.{{ sub.sending_domain }}</p>
+        </div>
+      </div>
+
+      <div class="border-t-2 border-pure-black dark:border-stark-white pt-4">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="font-bold">DKIM PRIVATE KEY:</span>
+          {% if key_error %}
+            <span class="text-brutal-red font-bold">unreadable ({{ key_error[:60] }})</span>
+          {% elif has_key %}
+            <span class="font-bold">stored</span>
+          {% else %}
+            <span class="text-brutal-red font-bold">missing</span>
+          {% endif %}
+        </div>
+        <label class="block font-bold mb-1">REPLACE KEY (OPTIONAL)</label>
+        <textarea name="dkim_private_key" rows="4" placeholder="-----BEGIN RSA PRIVATE KEY-----  ... leave blank to keep the current key" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black font-mono text-[var(--dj-fg)]"></textarea>
+        <p class="mt-1 opacity-70">Leave blank and the stored key is untouched. Generating a new pair on the DKIM page overwrites it.</p>
+      </div>
+
+      <div class="flex items-center gap-4 pt-2">
+        <button type="submit" class="px-6 py-3 brutal-btn-black text-xs font-extrabold tracking-wider">SAVE CHANGES</button>
+        <a href="{{ url_for('sending_admin.admin_subsidiaries') }}" class="text-xs font-bold underline">CANCEL</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

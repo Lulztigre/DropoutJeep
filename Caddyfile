@@ -1,0 +1,25 @@
+{$PHISH_DOMAIN} {
+    reverse_proxy dropoutjeep:5000
+}
+
+# Example: wildcard multi-domain campaign routing with Caddy on-demand TLS.
+# Point a wildcard DNS record *.campaigns.example.com at this server, then map
+# *.campaigns.example.com to a campaign in the admin UI. Caddy asks DropoutJeep
+# at /internal/caddy-ask before issuing a certificate.
+#
+# The ask endpoint lives in a global options block, and Caddy allows only one
+# such block per config. Service names, not 127.0.0.1: Caddy is in its own
+# container.
+#
+# {
+#     on_demand_tls {
+#         ask http://dropoutjeep:5000/internal/caddy-ask
+#     }
+# }
+#
+# *.campaigns.example.com {
+#     tls {
+#         on_demand
+#     }
+#     reverse_proxy dropoutjeep-proxy:8080
+# }

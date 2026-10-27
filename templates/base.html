@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>DropoutJeep • {{ title or "Dashboard" }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['Space Mono', 'monospace', 'Courier New'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            'brutal-red': '#E11D48',
+            'brutal-amber': '#F59E0B',
+            'brutal-emerald': '#10B981',
+            'off-white': '#F4F4F6',
+            'stark-white': '#FFFFFF',
+            'pure-black': '#000000',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --dj-bg: #F4F4F6;
+      --dj-fg: #000000;
+      --dj-card: #FFFFFF;
+      --dj-card-border: #000000;
+      --dj-card-shadow: #000000;
+      --dj-nav-bg: #FFFFFF;
+    }
+    .dark {
+      --dj-bg: #0a0a0a;
+      --dj-fg: #F4F4F6;
+      --dj-card: #111111;
+      --dj-card-border: #F4F4F6;
+      --dj-card-shadow: #E11D48;
+      --dj-nav-bg: #000000;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--dj-bg);
+      color: var(--dj-fg);
+    }
+    .font-mono-brutal {
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Remove rounded corners globally */
+    .rounded-box, .rounded-btn, .rounded-lg, .rounded-md, .rounded {
+      border-radius: 0px !important;
+    }
+
+    /* Stark Brutalist Borders & Shadows */
+    .brutal-card {
+      background-color: var(--dj-card);
+      border: 3px solid var(--dj-card-border);
+      box-shadow: 4px 4px 0px 0px var(--dj-card-shadow);
+      transition: all 0.15s ease-in-out;
+    }
+    .brutal-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px 0px #E11D48;
+    }
+
+    .brutal-btn-black {
+      background-color: #000000;
+      color: #FFFFFF;
+      font-weight: 800;
+      border: 2px solid #000000;
+      box-shadow: 3px 3px 0px 0px #000000;
+      transition: all 0.1s ease;
+    }
+    .dark .brutal-btn-black {
+      background-color: #F4F4F6;
+      color: #000000;
+      border-color: #F4F4F6;
+      box-shadow: 3px 3px 0px 0px #E11D48;
+    }
+    .brutal-btn-black:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px 0px #E11D48;
+      background-color: #FFFFFF;
+      color: #000000;
+    }
+    .dark .brutal-btn-black:hover:not(:disabled) {
+      background-color: #000000;
+      color: #F4F4F6;
+    }
+    .brutal-btn-black:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px 0px #000000;
+    }
+
+    .brutal-btn-red {
+      background-color: #E11D48;
+      color: #FFFFFF;
+      font-weight: 800;
+      border: 2px solid #000000;
+      box-shadow: 3px 3px 0px 0px #000000;
+      transition: all 0.1s ease;
+    }
+    .dark .brutal-btn-red {
+      border-color: #F4F4F6;
+      box-shadow: 3px 3px 0px 0px #F4F4F6;
+    }
+    .brutal-btn-red:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px 0px #000000;
+      background-color: #FFFFFF;
+      color: #000000;
+    }
+    .dark .brutal-btn-red:hover:not(:disabled) {
+      background-color: #000000;
+      color: #F4F4F6;
+      box-shadow: 4px 4px 0px 0px #F4F4F6;
+    }
+
+    .brutal-btn-white {
+      background-color: #FFFFFF;
+      color: #000000;
+      font-weight: 700;
+      border: 2px solid #000000;
+      box-shadow: 3px 3px 0px 0px #000000;
+      transition: all 0.1s ease;
+    }
+    .dark .brutal-btn-white {
+      background-color: #000000;
+      color: #F4F4F6;
+      border-color: #F4F4F6;
+      box-shadow: 3px 3px 0px 0px #F4F4F6;
+    }
+    .brutal-btn-white:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px 0px #E11D48;
+      background-color: #000000;
+      color: #FFFFFF;
+    }
+    .dark .brutal-btn-white:hover:not(:disabled) {
+      background-color: #F4F4F6;
+      color: #000000;
+    }
+
+    /* Strict Focus Indicators for WCAG AA */
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid #E11D48 !important;
+      outline-offset: 2px !important;
+    }
+
+    /* Mobile drawer */
+    #nav-drawer {
+      transform: translateX(100%);
+      transition: transform 0.2s ease;
+    }
+    #nav-drawer.open {
+      transform: translateX(0);
+    }
+
+    /* Hide summary arrow */
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    summary {
+      list-style: none;
+    }
+
+    /* Global dark-mode overrides for hardcoded Tailwind utilities */
+    .dark .bg-stark-white:not(.brutal-btn-black):not(.brutal-btn-red):not(.brutal-btn-white):not([class*="dark:bg"]) {
+      background-color: #111111 !important;
+    }
+    .dark .text-pure-black:not(.brutal-btn-black):not(.brutal-btn-red):not(.brutal-btn-white):not([class*="dark:text"]) {
+      color: #F4F4F6 !important;
+    }
+    .dark .border-pure-black:not(.brutal-btn-black):not(.brutal-btn-red):not(.brutal-btn-white):not([class*="dark:border"]) {
+      border-color: #F4F4F6 !important;
+    }
+    .dark .bg-off-white {
+      background-color: #1a1a1a !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-pure-black selection:text-stark-white dark:selection:bg-stark-white dark:selection:text-pure-black">
+  {% set hide_nav = hide_nav|default(false) %}
+  {% if not hide_nav %}
+  <nav class="border-b-4 border-pure-black py-4 sticky top-0 z-50 bg-[var(--dj-nav-bg)]">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:gap-3">
+      <!-- Top Row: Logo & Controls -->
+      <div class="flex items-center justify-between w-full">
+        <div class="flex items-center gap-4">
+          <a href="/" class="text-xl md:text-2xl font-extrabold font-mono-brutal tracking-wider text-pure-black dark:text-stark-white hover:text-brutal-red flex items-center gap-2">
+            <span class="bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black px-2 py-0.5">DJ</span>
+            <span class="hidden sm:inline">DROPOUTJEEP</span>
+            <span class="sm:hidden">DJ</span>
+          </a>
+        </div>
+        <div class="flex items-center gap-2">
+          {% if current_user %}
+          <a href="/admin/logout" class="px-2.5 py-1.5 font-mono-brutal text-xs font-bold bg-brutal-red text-stark-white border-2 border-pure-black dark:border-stark-white hover:bg-stark-white hover:text-pure-black dark:hover:bg-pure-black dark:hover:text-stark-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(225,29,72,1)] hover:translate-y-[-1px] hover:translate-x-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] active:translate-y-[1px] active:translate-x-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 focus:outline-none" aria-label="Logout">
+            <svg class="w-3.5 h-3.5 text-current stroke-[2]" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> <span class="hidden sm:inline">LOGOUT</span>
+          </a>
+          {% endif %}
+          <button id="theme-toggle" class="flex items-center font-mono-brutal text-xs font-bold border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black p-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(225,29,72,1)] hover:translate-y-[-1px] hover:translate-x-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] active:translate-y-[1px] active:translate-x-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all focus:outline-none" aria-label="Toggle dark mode">
+            <span class="px-2 py-1 bg-pure-black text-stark-white dark:bg-transparent dark:text-gray-400 transition-all flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-current fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0-5a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1Zm0 15a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1ZM5.22 5.22a1 1 0 0 1 1.42 0l1.41 1.42a1 1 0 0 1-1.41 1.41L5.22 6.64a1 1 0 0 1 0-1.42Zm10.72 10.72a1 1 0 0 1 1.42 0l1.41 1.42a1 1 0 0 1-1.41 1.41l-1.42-1.41a1 1 0 0 1 0-1.42ZM2 12a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2H3a1 1 0 0 1-1-1Zm15 0a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2h-2a1 1 0 0 1-1-1ZM6.64 18.78a1 1 0 0 1 0-1.42l1.42-1.41a1 1 0 1 1 1.41 1.41l-1.41 1.42a1 1 0 0 1-1.42 0Zm10.72-10.72a1 1 0 0 1 0-1.42l1.42-1.41a1 1 0 1 1 1.41 1.41l-1.41 1.42a1 1 0 0 1-1.42 0Z"/></svg> LIGHT
+            </span>
+            <span class="px-2 py-1 bg-transparent text-gray-500 dark:bg-brutal-red dark:text-stark-white transition-all flex items-center gap-1.5">
+              DARK <svg class="w-3.5 h-3.5 text-current fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.3 22c-5.5 0-10-4.5-10-10C2.3 7 5.9 3.2 10.9 2.1c.5-.1 1 .2 1.2.7.2.5 0 1.1-.4 1.4-1.9 1.4-3 3.6-3 6 0 4.1 3.4 7.5 7.5 7.5 2.4 0 4.6-1.1 6-3 .3-.4.9-.6 1.4-.4.5.2.8.7.7 1.2-1.1 5-4.9 8.6-10 8.6Z"/></svg>
+            </span>
+          </button>
+          <button id="menu-toggle" class="md:hidden p-2 border-2 border-pure-black dark:border-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" aria-label="Open menu">
+            <svg class="w-4 h-4 text-current stroke-[2.5]" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- Desktop Navigation Links -->
+      <ul class="hidden md:flex flex-wrap items-center gap-2 font-mono-brutal text-xs font-bold pt-3 border-t-2 border-pure-black dark:border-stark-white">
+        <li>
+          <a class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/">DASHBOARD</a>
+        </li>
+        <!-- Campaigns Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            CAMPAIGNS <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/campaigns">CAMPAIGNS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/recipients">RECIPIENTS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/auto-reply/rules">AUTO_REPLIES</a></li>
+          </ul>
+        </li>
+        <!-- Assets Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            ASSETS <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            {% if current_user.role in ('admin', 'operator') %}
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/templates">TEMPLATES</a></li>
+            {% endif %}
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/templates/landing-templates">LANDING_TEMPLATES</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/mailers">MAILERS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/recipients">RECIPIENTS</a></li>
+          </ul>
+        </li>
+        <!-- Setup Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            SETUP <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/subsidiaries">SUBSIDIARIES</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/dkim/generate">DKIM_GENERATOR</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/sending_profile/new">SENDING_PROFILES</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/rate-profiles">RATE_PROFILES</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/sender-rotation-pools">ROTATION_POOLS</a></li>
+          </ul>
+        </li>
+        <!-- Infrastructure Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            INFRASTRUCTURE <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/domain-health">DOMAIN_HEALTH</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/proxy-domains">PROXY_DOMAINS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/dns-dashboard">DNS_DASH</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/tls-status">TLS_STATUS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/domain-routing">DOMAIN_ROUTING</a></li>
+          </ul>
+        </li>
+        <!-- Operations Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            OPERATIONS <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[220px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/osint">OSINT_DASHBOARD</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/pretext-gen">PRETEXT_GENERATOR</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/branding-clone">BRANDING_CLONE</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/payloads">PAYLOAD_SUITE</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/exfil-channels">EXFIL_CHANNELS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/c2">C2_CONFIGURATION</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/evasion">EVASION_SETTINGS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/persistence">PERSISTENCE</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/warmup">WARMUP_MANAGER</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/fbl">FBL_REGISTRATION</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/proxy-payload">PROXY_PAYLOADS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/proxy-chain">PROXY_CHAIN</a></li>
+          </ul>
+        </li>
+        <!-- Integrations Dropdown -->
+        {% if current_user.role in ('admin', 'operator') %}
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            INTEGRATIONS <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/redirectors">REDIRECTORS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/redirectors/health">REDIRECTOR_HEALTH</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/c2-connectors">C2_CONNECTORS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/webhooks">WEBHOOKS</a></li>
+            {% if enable_plugins_ui %}
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/plugins">PLUGINS</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        {% endif %}
+        <!-- Deliverability Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            DELIVERABILITY <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/spoof-check">SPOOF_CHECK</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/domain-reputation">DOMAIN_REP</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/urlcheck">URL_CHECK</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/bounce">BOUNCE</a></li>
+            {% if current_user.role in ('admin', 'operator') %}
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/suppressions">SUPPRESSIONS</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        <!-- Analytics Dropdown -->
+        <li class="relative group">
+          <button class="px-2 py-2 border-2 border-transparent text-pure-black dark:text-stark-white hover:border-pure-black hover:bg-pure-black hover:text-stark-white dark:hover:border-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            ANALYTICS <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute left-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/events">EVENTS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/reports">REPORTS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/landing_pages">LANDING_PREVIEWS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/loot">LOOT_VAULT</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/exfil">EXFIL_VIEWER</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/logs">LOGS</a></li>
+          </ul>
+        </li>
+        <!-- Admin Dropdown -->
+        {% if current_user.role == 'admin' %}
+        <li class="relative group">
+          <button class="px-2 py-1.5 bg-pure-black border-2 border-pure-black text-stark-white hover:bg-stark-white hover:text-pure-black dark:bg-stark-white dark:border-stark-white dark:text-pure-black dark:hover:bg-pure-black dark:hover:text-stark-white transition-all flex items-center gap-1 focus:outline-none" aria-haspopup="true">
+            ADMIN_CONSOLE <svg class="w-2.5 h-2.5 ml-1 text-current stroke-[2.5]" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </button>
+          <ul class="absolute right-0 mt-1 hidden group-hover:block group-focus-within:block bg-[var(--dj-card)] border-[3px] border-pure-black dark:border-stark-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] min-w-[200px] z-50 text-left font-mono-brutal text-xs">
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin">CONSOLE HOME</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/users">USERS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/api-tokens">API_TOKENS</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all border-b-2 border-pure-black dark:border-stark-white" href="/admin/purge">PURGE</a></li>
+            <li><a class="block px-3 py-2 text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/admin/settings">SETTINGS</a></li>
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Mobile drawer -->
+  <div id="nav-drawer" class="fixed inset-y-0 right-0 w-64 bg-[var(--dj-card)] border-l-4 border-pure-black dark:border-stark-white z-[60] p-6 md:hidden">
+    <div class="flex justify-between items-center mb-6">
+      <span class="font-mono-brutal font-bold">MENU</span>
+      <button id="menu-close" class="p-2 border-2 border-pure-black dark:border-stark-white flex items-center justify-center" aria-label="Close menu">
+        <svg class="w-4 h-4 text-current stroke-[2.5]" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <ul class="flex flex-col gap-3 font-mono-brutal text-sm font-bold">
+      <li>
+        <a class="block px-3 py-2 border-2 border-pure-black dark:border-stark-white text-pure-black dark:text-stark-white hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black transition-all" href="/">DASHBOARD</a>
+      </li>
+      
+      <!-- Campaigns Collapsible -->
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>CAMPAIGNS</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/campaigns">CAMPAIGNS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/recipients">RECIPIENTS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/auto-reply/rules">AUTO_REPLIES</a></li>
+          </ul>
+        </details>
+      </li>
+
+      <!-- Assets Collapsible -->
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>ASSETS</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            {% if current_user.role in ('admin', 'operator') %}
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/templates">TEMPLATES</a></li>
+            {% endif %}
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/templates/landing-templates">LANDING_TEMPLATES</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/mailers">MAILERS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/recipients">RECIPIENTS</a></li>
+          </ul>
+        </details>
+      </li>
+
+      <!-- Setup Collapsible -->
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>SETUP</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/subsidiaries">SUBSIDIARIES</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/dkim/generate">DKIM_GENERATOR</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/sending_profile/new">SENDING_PROFILES</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/rate-profiles">RATE_PROFILES</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/sender-rotation-pools">ROTATION_POOLS</a></li>
+          </ul>
+        </details>
+      </li>
+
+      <!-- Infrastructure Collapsible -->
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>INFRASTRUCTURE</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/domain-health">DOMAIN_HEALTH</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/proxy-domains">PROXY_DOMAINS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/dns-dashboard">DNS_DASH</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/tls-status">TLS_STATUS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/domain-routing">DOMAIN_ROUTING</a></li>
+          </ul>
+        </details>
+      </li>
+
+      <!-- Integrations Collapsible -->
+      {% if current_user.role in ('admin', 'operator') %}
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>INTEGRATIONS</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/redirectors">REDIRECTORS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/redirectors/health">REDIRECTOR_HEALTH</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/c2-connectors">C2_CONNECTORS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/webhooks">WEBHOOKS</a></li>
+            {% if enable_plugins_ui %}
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/plugins">PLUGINS</a></li>
+            {% endif %}
+          </ul>
+        </details>
+      </li>
+      {% endif %}
+
+      <!-- Deliverability Collapsible -->
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>DELIVERABILITY</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/spoof-check">SPOOF_CHECK</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/domain-reputation">DOMAIN_REP</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/urlcheck">URL_CHECK</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/bounce">BOUNCE</a></li>
+            {% if current_user.role in ('admin', 'operator') %}
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/suppressions">SUPPRESSIONS</a></li>
+            {% endif %}
+          </ul>
+        </details>
+      </li>
+
+      <!-- Analytics Collapsible -->
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black cursor-pointer list-none select-none">
+            <span>ANALYTICS</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/events">EVENTS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/reports">REPORTS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/landing_pages">LANDING_PREVIEWS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/exfil">EXFIL_VIEWER</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/logs">LOGS</a></li>
+          </ul>
+        </details>
+      </li>
+
+      <!-- Admin Collapsible -->
+      {% if current_user.role == 'admin' %}
+      <li>
+        <details class="group/mobile">
+          <summary class="flex justify-between items-center px-3 py-2 border-2 border-pure-black dark:border-stark-white bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black cursor-pointer list-none select-none">
+            <span>ADMIN_CONSOLE</span>
+            <svg class="w-3 h-3 text-current stroke-[2.5] transition-transform group-open/mobile:rotate-180" fill="none" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="m1 1 4 4 4-4"/></svg>
+          </summary>
+          <ul class="pl-4 mt-2 flex flex-col gap-1 border-l-2 border-pure-black dark:border-stark-white text-xs">
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin">CONSOLE HOME</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/users">USERS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/api-tokens">API_TOKENS</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/purge">PURGE</a></li>
+            <li><a class="block px-3 py-2 hover:bg-pure-black hover:text-stark-white dark:hover:bg-stark-white dark:hover:text-pure-black" href="/admin/settings">SETTINGS</a></li>
+          </ul>
+        </details>
+      </li>
+      {% endif %}
+      
+      {% if current_user %}
+      <li>
+        <a class="block px-3 py-2 bg-brutal-red border-2 border-pure-black text-stark-white hover:bg-stark-white hover:text-pure-black dark:border-stark-white dark:hover:bg-pure-black dark:hover:text-stark-white transition-all text-center" href="/admin/logout">LOGOUT</a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+  {% else %}
+  <!-- Login page: only theme toggle -->
+  <div class="fixed top-0 right-0 p-4 z-50">
+    <button id="theme-toggle" class="flex items-center font-mono-brutal text-xs font-bold border-2 border-pure-black dark:border-stark-white bg-off-white dark:bg-black p-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(225,29,72,1)] hover:translate-y-[-1px] hover:translate-x-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[3px_3px_0px_0px_rgba(225,29,72,1)] active:translate-y-[1px] active:translate-x-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all focus:outline-none" aria-label="Toggle dark mode">
+      <span class="px-2 py-1 bg-pure-black text-stark-white dark:bg-transparent dark:text-gray-400 transition-all flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-current fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0-5a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1Zm0 15a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1ZM5.22 5.22a1 1 0 0 1 1.42 0l1.41 1.42a1 1 0 0 1-1.41 1.41L5.22 6.64a1 1 0 0 1 0-1.42Zm10.72 10.72a1 1 0 0 1 1.42 0l1.41 1.42a1 1 0 0 1-1.41 1.41l-1.42-1.41a1 1 0 0 1 0-1.42ZM2 12a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2H3a1 1 0 0 1-1-1Zm15 0a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2h-2a1 1 0 0 1-1-1ZM6.64 18.78a1 1 0 0 1 0-1.42l1.42-1.41a1 1 0 1 1 1.41 1.41l-1.41 1.42a1 1 0 0 1-1.42 0Zm10.72-10.72a1 1 0 0 1 0-1.42l1.42-1.41a1 1 0 1 1 1.41 1.41l-1.41 1.42a1 1 0 0 1-1.42 0Z"/></svg> LIGHT
+      </span>
+      <span class="px-2 py-1 bg-transparent text-gray-500 dark:bg-brutal-red dark:text-stark-white transition-all flex items-center gap-1.5">
+        DARK <svg class="w-3.5 h-3.5 text-current fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.3 22c-5.5 0-10-4.5-10-10C2.3 7 5.9 3.2 10.9 2.1c.5-.1 1 .2 1.2.7.2.5 0 1.1-.4 1.4-1.9 1.4-3 3.6-3 6 0 4.1 3.4 7.5 7.5 7.5 2.4 0 4.6-1.1 6-3 .3-.4.9-.6 1.4-.4.5.2.8.7.7 1.2-1.1 5-4.9 8.6-10 8.6Z"/></svg>
+      </span>
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Flash Message Banner -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="max-w-7xl mx-auto px-4 md:px-6 mt-4 w-full">
+        {% for category, message in messages %}
+          <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] text-[var(--dj-fg)] p-4 font-mono-brutal flex justify-between items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+            <span class="font-bold">
+              {% if category == 'success' %}
+                <span class="text-brutal-emerald">[SUCCESS]</span>
+              {% elif category == 'warning' %}
+                <span class="text-brutal-amber">[WARNING]</span>
+              {% else %}
+                <span class="text-brutal-red">[ALERT]</span>
+              {% endif %}
+              {{ message }}
+            </span>
+            <button onclick="this.parentElement.remove()" class="text-[var(--dj-fg)] hover:text-brutal-red font-extrabold text-lg" aria-label="Close message">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="max-w-7xl mx-auto p-4 md:p-6 w-full flex-grow">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] py-6 mt-12 font-mono-brutal text-xs text-[var(--dj-fg)]">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="font-bold">
+        DROPOUTJEEP &bull; LULZTIGRE
+      </div>
+      <div class="font-extrabold border-2 border-pure-black dark:border-stark-white px-2 py-0.5 bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black">
+        AUTHORIZED SIMULATION MODE
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      const stored = localStorage.getItem('dj-theme');
+      if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const html = document.documentElement;
+        html.classList.toggle('dark');
+        localStorage.setItem('dj-theme', html.classList.contains('dark') ? 'dark' : 'light');
+      });
+      const drawer = document.getElementById('nav-drawer');
+      const menuToggle = document.getElementById('menu-toggle');
+      const menuClose = document.getElementById('menu-close');
+      if (drawer && menuToggle) {
+        menuToggle.addEventListener('click', () => drawer.classList.add('open'));
+      }
+      if (drawer && menuClose) {
+        menuClose.addEventListener('click', () => drawer.classList.remove('open'));
+      }
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

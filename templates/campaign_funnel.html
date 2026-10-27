@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+    <div class="mb-6">
+        <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+            </svg>
+            [ BACK TO CAMPAIGN INFO ]
+        </a>
+    </div>
+
+    <header class="mb-8 border-b-4 border-pure-black pb-6">
+        <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ CAMPAIGN_FUNNEL ]</h1>
+        <p class="text-sm text-brutal-red font-bold">&gt; {{ campaign.name }} — engagement drop-off analysis</p>
+        <a href="{{ url_for('admin_campaign_analytics', cid=campaign.id) }}" class="inline-block mt-3 px-3 py-1 border-2 border-pure-black bg-stark-white text-xs font-bold hover:bg-pure-black hover:text-white transition-all">[ ANALYTICS & EXPORTS ]</a>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="lg:col-span-2 border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-sm font-bold tracking-wide text-pure-black mb-4 uppercase">[ FUNNEL_CHART ]</h2>
+            <div class="bg-off-white p-2 border-2 border-pure-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                <canvas id="funnelChart" height="240"></canvas>
+            </div>
+        </div>
+
+        <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-sm font-bold tracking-wide text-pure-black mb-4 uppercase">[ DROP_OFF_RATES ]</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-pure-black text-gray-600 text-xs">
+                            <th class="py-2 font-bold">STAGE</th>
+                            <th class="py-2 font-bold text-right">COUNT</th>
+                            <th class="py-2 font-bold text-right">DROP-OFF</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in funnel %}
+                        <tr class="border-b border-off-white">
+                            <td class="py-2 font-bold">{{ step.label }}</td>
+                            <td class="py-2 text-right font-bold">{{ step.count }}</td>
+                            <td class="py-2 text-right font-bold {{ 'text-brutal-red' if step.drop_off_rate > 0 else 'text-gray-500' }}">
+                                {{ step.drop_off_rate }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+        <h2 class="text-sm font-bold tracking-wide text-pure-black mb-4 uppercase">[ RAW_JSON ]</h2>
+        <pre class="bg-off-white border-2 border-pure-black p-4 text-xs overflow-auto">{{ funnel | tojson(indent=2) }}</pre>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const funnelData = {{ funnel | tojson }};
+const labels = funnelData.map(s => s.label);
+const counts = funnelData.map(s => s.count);
+const dropOffs = funnelData.map(s => s.drop_off_rate);
+
+const ctx = document.getElementById('funnelChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Recipients',
+            data: counts,
+            backgroundColor: counts.map((_, i) => {
+                const colors = ['#000000', '#1F2937', '#374151', '#E11D48', '#F59E0B', '#10B981', '#3B82F6'];
+                return colors[i % colors.length];
+            }),
+            borderColor: '#000000',
+            borderWidth: 2,
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                grid: { color: '#E2E8F0' },
+                ticks: { color: '#000000', font: { family: 'Space Mono', size: 10, weight: 'bold' } }
+            },
+            y: {
+                grid: { display: false },
+                ticks: { color: '#000000', font: { family: 'Space Mono', size: 11, weight: 'bold' } }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

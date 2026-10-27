@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    {% if item.campaign_id %}
+    <a href="{{ url_for('loot.admin_campaign_loot', cid=item.campaign_id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO LOOT VAULT ]
+    </a>
+    {% else %}
+    <a href="{{ url_for('loot.admin_loot_index') }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO LOOT VAULT ]
+    </a>
+    {% endif %}
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">LOOT DETAIL</h1>
+    <a href="{{ url_for('loot.admin_loot_index') }}" class="brutal-btn-white px-4 py-2 text-sm">BACK TO LOOT</a>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono-brutal">
+      <div>
+        <dt class="font-bold">Captured At</dt>
+        <dd>{{ item.captured_at.strftime('%Y-%m-%d %H:%M:%S') if item.captured_at else '-' }}</dd>
+      </div>
+      <div>
+        <dt class="font-bold">Category</dt>
+        <dd><span class="px-2 py-0.5 border border-pure-black dark:border-stark-white">{{ item.category }}</span></dd>
+      </div>
+      <div>
+        <dt class="font-bold">Source</dt>
+        <dd>{{ item.source }}</dd>
+      </div>
+      <div>
+        <dt class="font-bold">Campaign</dt>
+        <dd>
+          {% if item.campaign %}
+          <a href="{{ url_for('loot.admin_campaign_loot', cid=item.campaign_id) }}" class="underline">{{ item.campaign.name }}</a>
+          {% else %}-{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="font-bold">Recipient</dt>
+        <dd>{{ item.recipient.email if item.recipient else '-' }}</dd>
+      </div>
+      <div>
+        <dt class="font-bold">IP / User-Agent</dt>
+        <dd>{{ item.ip or '-' }}<br><span class="text-xs text-gray-500">{{ item.ua or '-' }}</span></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">DECRYPTED DATA</h2>
+    <pre class="bg-[var(--dj-bg)] border-2 border-pure-black dark:border-stark-white p-4 overflow-x-auto text-xs font-mono">{{ data_json }}</pre>
+  </div>
+
+  {% if current_user.role in ('admin', 'operator') %}
+  <form method="post" action="{{ url_for('loot.admin_loot_delete', item_id=item.id) }}" onsubmit="return confirm('Delete this loot item?');">
+    <button type="submit" class="brutal-btn-red px-4 py-2 text-sm">DELETE LOOT ITEM</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

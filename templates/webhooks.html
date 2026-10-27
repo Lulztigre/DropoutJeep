@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <h1 class="text-3xl font-extrabold font-mono-brutal mb-6">WEBHOOKS</h1>
+
+  <div class="brutal-card p-6 mb-8">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">Create Webhook</h2>
+    <form method="post" action="{{ url_for('admin_webhook_new') }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Name</label>
+        <input type="text" name="name" required class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">URL</label>
+        <input type="url" name="url" required placeholder="https://hooks.example.com/dropoutjeep" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Secret (HMAC-SHA256 key)</label>
+        <input type="text" name="secret" required class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Campaign (optional)</label>
+        <select name="campaign_id" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">All campaigns</option>
+          {% for c in campaigns %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-2">Events (leave blank for all)</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {% for value, label in event_types %}
+          <label class="flex items-center gap-2 font-mono-brutal text-sm">
+            <input type="checkbox" name="events" value="{{ value }}" class="w-4 h-4 border-2 border-pure-black">
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2">CREATE WEBHOOK</button>
+    </form>
+  </div>
+
+  <div class="brutal-card p-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">Existing Webhooks</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[800px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Name</th>
+            <th class="text-left py-2">URL</th>
+            <th class="text-left py-2">Campaign</th>
+            <th class="text-left py-2">Events</th>
+            <th class="text-left py-2">Last Status</th>
+            <th class="text-left py-2">Status</th>
+            <th class="text-right py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in webhooks %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2">{{ w.name }}</td>
+            <td class="py-2 break-all max-w-xs">{{ w.url }}</td>
+            <td class="py-2">{{ w.campaign.name if w.campaign else 'All' }}</td>
+            <td class="py-2">{{ w.get_events() | join(', ') if w.get_events() else 'All' }}</td>
+            <td class="py-2">{{ w.last_status or '-' }}</td>
+            <td class="py-2">{{ 'Active' if w.is_active else 'Disabled' }}</td>
+            <td class="py-2 text-right space-x-2">
+              <form method="post" action="{{ url_for('admin_webhook_toggle', webhook_id=w.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-white px-3 py-1 text-xs">{{ 'DISABLE' if w.is_active else 'ENABLE' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_webhook_delete', webhook_id=w.id) }}" class="inline" onsubmit="return confirm('Delete this webhook?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-red px-3 py-1 text-xs">DELETE</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="py-4 text-gray-500 dark:text-gray-400">No webhooks yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

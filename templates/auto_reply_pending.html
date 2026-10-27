@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  
+  <!-- Back Link -->
+  <div class="mb-6">
+    <a href="{{ url_for('admin_auto_reply_rules') }}" class="inline-flex items-center text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+      </svg>
+      [ BACK TO AUTO-REPLY RULES ]
+    </a>
+  </div>
+
+  <!-- Header -->
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ PENDING_AUTO_REPLIES ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Stage replies for security approval. Approval releases outbound relays.</p>
+  </header>
+
+  <!-- Table panel -->
+  <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-sm">
+        <thead>
+          <tr class="border-b-2 border-pure-black text-gray-700 text-xs">
+            <th class="py-3 px-2 font-bold">FROM (TARGET)</th>
+            <th class="py-3 px-2 font-bold">REPLY SUBJECT</th>
+            <th class="py-3 px-2 font-bold">TRIGGER RULE</th>
+            <th class="py-3 px-2 font-bold">STAGED TIME</th>
+            <th class="py-3 px-2 text-right font-bold">TRIAGE ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in pending %}
+          <tr class="border-t border-pure-black bg-off-white/40">
+            <td class="py-3 px-2 text-pure-black font-extrabold">{{ r.original_sender }}</td>
+            <td class="py-3 px-2 font-bold text-gray-800">{{ r.reply_subject }}</td>
+            <td class="py-3 px-2"><span class="px-1.5 py-0.5 text-xs font-bold border border-pure-black bg-stark-white text-pure-black">{{ r.rule.name }}</span></td>
+            <td class="py-3 px-2 text-xs text-gray-500 font-bold">{{ r.created_at }}</td>
+            <td class="py-3 px-2 text-right">
+              <div class="flex justify-end gap-2 text-xs font-bold">
+                <form method="post" action="{{ url_for('admin_auto_reply_send', reply_id=r.id) }}" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="px-3 py-1 border-2 border-pure-black text-white bg-brutal-emerald hover:bg-stark-white hover:text-brutal-emerald transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">[APPROVE & SEND]</button>
+                </form>
+                <form method="post" action="{{ url_for('admin_auto_reply_reject', reply_id=r.id) }}" class="inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="px-3 py-1 border-2 border-pure-black text-white bg-brutal-red hover:bg-stark-white hover:text-brutal-red transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">[REJECT]</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <!-- Inner Collapsible Content View Block -->
+          <tr class="border-b-2 border-pure-black">
+            <td colspan="5" class="py-3 px-4 bg-stark-white">
+              <div class="border-2 border-pure-black bg-off-white p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <div class="text-[10px] text-gray-500 font-bold mb-1.5 uppercase">&gt; RAW PREVIEW HTML:</div>
+                <iframe srcdoc="{{ r.reply_body_html | e }}" class="w-full h-40 border border-pure-black bg-white"></iframe>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="p-8 text-center text-gray-500 font-mono-brutal font-bold" colspan="5">
+              [ NO STAGED AUTO-REPLIES AWAITING ACTION ]
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

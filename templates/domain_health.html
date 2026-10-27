@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 font-mono-brutal">
+
+    <!-- Navigation Back Link -->
+    <div class="mb-6">
+        <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+            [ BACK TO DASHBOARD ]
+        </a>
+    </div>
+
+    <!-- Header -->
+    <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-[var(--dj-fg)] mb-2">[ DOMAIN_HEALTH ]</h1>
+            <p class="text-sm text-brutal-red font-bold">&gt; Unified sending domain status overview</p>
+        </div>
+        <div class="flex gap-2">
+            <a class="px-4 py-2.5 brutal-btn-black text-xs text-center" href="/admin/domain-reputation">DOMAIN_REPUTATION</a>
+            <a class="px-4 py-2.5 brutal-btn-white text-xs text-center" href="/admin/dkim/generate">DKIM_GENERATOR</a>
+        </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {% set total_domains = domain_data|length %}
+        {% set healthy_domains = domain_data|selectattr('all_healthy')|list|length %}
+        {% set domains_with_rep = domain_data|selectattr('rep_score', 'ne', none)|list|length %}
+        {% set high_risk = domain_data|selectattr('blacklist_flags')|selectattr('blacklist_flags')|list|length %}
+        <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+            <div class="font-mono-brutal text-xs text-gray-500 uppercase">Total Domains</div>
+            <div class="font-mono-brutal text-3xl font-extrabold">{{ total_domains }}</div>
+        </div>
+        <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+            <div class="font-mono-brutal text-xs text-gray-500 uppercase">Fully Healthy</div>
+            <div class="font-mono-brutal text-3xl font-extrabold text-brutal-emerald">{{ healthy_domains }}</div>
+        </div>
+        <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+            <div class="font-mono-brutal text-xs text-gray-500 uppercase">With Reputation Data</div>
+            <div class="font-mono-brutal text-3xl font-extrabold">{{ domains_with_rep }}</div>
+        </div>
+        <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)]">
+            <div class="font-mono-brutal text-xs text-gray-500 uppercase">Blacklisted</div>
+            <div class="font-mono-brutal text-3xl font-extrabold {% if high_risk > 0 %}text-brutal-red{% endif %}">{{ high_risk }}</div>
+        </div>
+    </div>
+
+    <!-- Domain Cards -->
+    {% for d in domain_data %}
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+        <!-- Domain Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <div>
+                <h2 class="text-xl font-extrabold text-[var(--dj-fg)]">{{ d.domain }}</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ d.subsidiary.name }} &bull; {{ d.campaign_count }} campaign(s)</p>
+            </div>
+            <div class="flex gap-2">
+                {% if d.all_healthy %}
+                <span class="px-2 py-1 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-brutal-emerald text-white uppercase">[HEALTHY]</span>
+                {% else %}
+                <span class="px-2 py-1 text-[10px] font-bold border border-pure-black dark:border-stark-white bg-brutal-red text-white uppercase">[ISSUES FOUND]</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Authentication Status -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <!-- SPF -->
+            <div class="border-2 border-pure-black dark:border-stark-white p-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-xs">SPF</span>
+                    {% if d.spf_ok %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-brutal-emerald text-white">PASS</span>
+                    {% else %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-brutal-red text-white">FAIL</span>
+                    {% endif %}
+                </div>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 break-all">{{ d.spf_txt[:100] }}{% if d.spf_txt|length > 100 %}...{% endif %}</p>
+            </div>
+
+            <!-- DKIM -->
+            <div class="border-2 border-pure-black dark:border-stark-white p-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-xs">DKIM</span>
+                    {% if d.dkim_ok %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-brutal-emerald text-white">PASS</span>
+                    {% else %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-brutal-red text-white">FAIL</span>
+                    {% endif %}
+                </div>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 break-all">{{ d.dkim_txt[:100] }}{% if d.dkim_txt|length > 100 %}...{% endif %}</p>
+            </div>
+
+            <!-- DMARC -->
+            <div class="border-2 border-pure-black dark:border-stark-white p-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-xs">DMARC</span>
+                    {% if d.dmarc_ok %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-brutal-emerald text-white">PASS</span>
+                    {% else %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-brutal-red text-white">FAIL</span>
+                    {% endif %}
+                </div>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 break-all">{{ d.dmarc_txt[:100] }}{% if d.dmarc_txt|length > 100 %}...{% endif %}</p>
+            </div>
+        </div>
+
+        <!-- Reputation & Warmup -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <div class="text-[10px] text-gray-500 uppercase">Reputation Score</div>
+                {% if d.rep_score is not none %}
+                <div class="text-lg font-extrabold {% if d.rep_score >= 70 %}text-brutal-emerald{% elif d.rep_score >= 40 %}text-brutal-amber{% else %}text-brutal-red{% endif %}">{{ d.rep_score }}/100</div>
+                {% else %}
+                <div class="text-lg font-extrabold text-gray-400">N/A</div>
+                {% endif %}
+            </div>
+            <div class="text-center">
+                <div class="text-[10px] text-gray-500 uppercase">Warmup Level</div>
+                <div class="text-lg font-extrabold">L{{ d.warmup_level }}</div>
+            </div>
+            <div class="text-center">
+                <div class="text-[10px] text-gray-500 uppercase">VirusTotal</div>
+                {% if d.virus_total is not none %}
+                <div class="text-lg font-extrabold {% if d.virus_total <= 1 %}text-brutal-emerald{% elif d.virus_total <= 3 %}text-brutal-amber{% else %}text-brutal-red{% endif %}">{{ d.virus_total }}</div>
+                {% else %}
+                <div class="text-lg font-extrabold text-gray-400">N/A</div>
+                {% endif %}
+            </div>
+            <div class="text-center">
+                <div class="text-[10px] text-gray-500 uppercase">Blacklists</div>
+                {% if d.blacklist_flags %}
+                <div class="text-lg font-extrabold text-brutal-red">{{ d.blacklist_flags|length }}</div>
+                {% else %}
+                <div class="text-lg font-extrabold text-brutal-emerald">0</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-8 text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+        <p class="font-mono-brutal text-gray-500 dark:text-gray-400">[ NO DOMAINS CONFIGURED ]</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Create a subsidiary with a sending domain to get started.</p>
+        <a class="mt-4 inline-block px-4 py-2 brutal-btn-black text-xs" href="/admin/subsidiary/new">[ CREATE SUBSIDIARY ]</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

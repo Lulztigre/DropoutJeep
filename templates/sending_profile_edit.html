@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 font-mono-brutal">
+    
+    <!-- Navigation Back Link -->
+    <div class="mb-6">
+        <a href="{{ url_for('mailers_page') }}" class="inline-flex items-center text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+            </svg>
+            [ BACK TO MAILERS ]
+        </a>
+    </div>
+
+    <!-- Header -->
+    <header class="mb-8 border-b-4 border-pure-black pb-6">
+        <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ EDIT_SENDER_PROFILE ]</h1>
+        <p class="text-sm text-brutal-red font-bold">&gt; Modify target SMTP relay profile: {{ profile.name }}</p>
+    </header>
+
+    <!-- Configuration Form -->
+    <form method="POST" class="border-4 border-pure-black bg-stark-white p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-6 text-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Profile Identity -->
+        <div>
+            <label for="name" class="block text-xs font-bold text-pure-black mb-1.5">
+                PROFILE NAME <span class="text-brutal-red">*</span>
+            </label>
+            <input 
+                type="text" 
+                id="name" 
+                name="name" 
+                value="{{ profile.name }}"
+                required
+                class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black font-bold focus:border-brutal-red focus:outline-none"
+                placeholder="e.g., Main Relay Profile"
+            >
+        </div>
+
+        <!-- SMTP Credentials -->
+        <div class="border-t-2 border-pure-black pt-6">
+            <h3 class="text-sm font-black text-pure-black mb-4 uppercase">[ SMTP_RELAY_SETTINGS ]</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <label for="smtp_host" class="block text-xs font-bold text-pure-black mb-1.5">
+                        SMTP HOST <span class="text-brutal-red">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="smtp_host" 
+                        name="smtp_host" 
+                        value="{{ profile.smtp_host }}"
+                        required
+                        class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                        placeholder="smtp.example.com"
+                    >
+                </div>
+
+                <div>
+                    <label for="smtp_port" class="block text-xs font-bold text-pure-black mb-1.5">
+                        SMTP PORT <span class="text-brutal-red">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="smtp_port" 
+                        name="smtp_port" 
+                        value="{{ profile.smtp_port }}"
+                        required
+                        class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                        placeholder="25"
+                    >
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication -->
+        <div class="border-t-2 border-pure-black pt-6 space-y-4">
+            <h3 class="text-sm font-black text-pure-black uppercase">[ AUTHENTICATION_CREDENTIALS ]</h3>
+            
+            <div>
+                <label for="smtp_user" class="block text-xs font-bold text-pure-black mb-1.5">
+                    SMTP USERNAME
+                </label>
+                <input 
+                    type="text" 
+                    id="smtp_user" 
+                    name="smtp_user" 
+                    value="{{ profile.smtp_user or '' }}"
+                    class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                    placeholder="smtp-account-user"
+                >
+            </div>
+
+            <div>
+                <label for="smtp_pass" class="block text-xs font-bold text-pure-black mb-1.5">
+                    SMTP PASSWORD
+                </label>
+                <input 
+                    type="password" 
+                    id="smtp_pass" 
+                    name="smtp_pass" 
+                    class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                    placeholder="••••••••"
+                >
+                <p class="text-[10px] text-gray-500 mt-1">Leave blank to retain the current encrypted password.</p>
+            </div>
+        </div>
+
+        <!-- IMAP Inbox Configuration -->
+        <div class="border-t-2 border-pure-black pt-6 space-y-4">
+            <h3 class="text-sm font-black text-pure-black uppercase">[ IMAP_INBOX_SETTINGS ]</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <label for="imap_host" class="block text-xs font-bold text-pure-black mb-1.5">IMAP HOST</label>
+                    <input type="text" id="imap_host" name="imap_host" value="{{ profile.imap_host or '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="imap.example.com">
+                </div>
+                <div>
+                    <label for="imap_port" class="block text-xs font-bold text-pure-black mb-1.5">IMAP PORT</label>
+                    <input type="number" id="imap_port" name="imap_port" value="{{ profile.imap_port or 993 }}" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label for="imap_user" class="block text-xs font-bold text-pure-black mb-1.5">IMAP USERNAME</label>
+                <input type="text" id="imap_user" name="imap_user" value="{{ profile.imap_user or '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="imap-account-user">
+            </div>
+
+            <div>
+                <label for="imap_pass" class="block text-xs font-bold text-pure-black mb-1.5">IMAP PASSWORD</label>
+                <input type="password" id="imap_pass" name="imap_pass" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+                <p class="text-[10px] text-gray-500 mt-1">Leave blank to retain the current encrypted password.</p>
+            </div>
+
+            <div class="py-2">
+                <label for="imap_use_tls" class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+                    <input type="checkbox" id="imap_use_tls" name="imap_use_tls" {{ 'checked' if profile.imap_use_tls else '' }} class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+                    IMAP USE TLS / SSL
+                </label>
+            </div>
+        </div>
+
+        <!-- TLS & Security Configuration -->
+        <div class="border-t-2 border-pure-black pt-6 space-y-4">
+            <h3 class="text-sm font-black text-pure-black uppercase">[ SECURITY_AND_BOUNDING ]</h3>
+            
+            <div class="py-2">
+                <label for="use_tls" class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="use_tls" 
+                        name="use_tls" 
+                        {{ 'checked' if profile.use_tls else '' }}
+                        class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0"
+                    >
+                    ENFORCE TLS / SSL PROTOCOLS
+                </label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="subsidiary_id" class="block text-xs font-bold text-pure-black mb-1.5">
+                        LINKED SUBSIDIARY
+                    </label>
+                    <select 
+                        id="subsidiary_id" 
+                        name="subsidiary_id"
+                        class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white"
+                    >
+                        <option value="">None (Generic SMTP)</option>
+                        {% for sub in subsidiaries %}
+                        <option value="{{ sub.id }}" {{ 'selected' if profile.subsidiary_id == sub.id else '' }}>
+                            {{ sub.name }} ({{ sub.sending_domain }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="rate_profile_id" class="block text-xs font-bold text-pure-black mb-1.5">
+                        DELAY RATE LIMIT PROFILE
+                    </label>
+                    <select 
+                        id="rate_profile_id" 
+                        name="rate_profile_id"
+                        class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white"
+                    >
+                        <option value="">Auto-detect by host</option>
+                        {% for rp in rate_profiles %}
+                        <option value="{{ rp.id }}" {{ 'selected' if profile.rate_profile_id == rp.id else '' }}>
+                            {{ rp.name }} {% if rp.is_default %}(default){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- BIMI & ARC & Warmup & FBL Settings -->
+            <div class="border-t-2 border-pure-black pt-4 space-y-4">
+                <h4 class="text-xs font-black text-pure-black uppercase">[ ADVANCED_AUTHENTICATION & REPUTATION ]</h4>
+                
+                <div>
+                    <label for="bimi_logo_url" class="block text-xs font-bold text-pure-black mb-1.5">BIMI LOGO URL (HTTPS SVG)</label>
+                    <input type="text" id="bimi_logo_url" name="bimi_logo_url" value="{{ profile.bimi_logo_url or '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-xs text-pure-black focus:border-brutal-red focus:outline-none" placeholder="https://example.com/logo.svg">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="arc_enabled" class="flex items-center gap-2 text-xs font-bold text-pure-black cursor-pointer">
+                            <input type="checkbox" id="arc_enabled" name="arc_enabled" {{ 'checked' if profile.arc_enabled else '' }} class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+                            ENABLE ARC SIGNING (RFC 8617)
+                        </label>
+                    </div>
+                    <div>
+                        <label for="arc_selector" class="block text-xs font-bold text-pure-black mb-1">ARC SELECTOR</label>
+                        <input type="text" id="arc_selector" name="arc_selector" value="{{ profile.arc_selector or '' }}" class="w-full bg-stark-white border-2 border-pure-black p-2 text-xs text-pure-black focus:border-brutal-red focus:outline-none" placeholder="arc">
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-4 items-center pt-2">
+                    <label for="warmup_active" class="flex items-center gap-2 text-xs font-bold text-pure-black cursor-pointer">
+                        <input type="checkbox" id="warmup_active" name="warmup_active" {{ 'checked' if profile.warmup_active else '' }} class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+                        WARMUP MODE ACTIVE (Day {{ profile.warmup_day or 0 }})
+                    </label>
+                    <a href="/admin/fbl" class="text-xs font-bold text-brutal-red underline hover:text-pure-black">[ FBL REGISTRATION STATUS ]</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Submission Button Set -->
+        <div class="border-t-2 border-pure-black pt-6 flex gap-4">
+            <button 
+                type="submit" 
+                class="flex-1 py-3 brutal-btn-black text-xs font-extrabold tracking-wider"
+            >
+                [ SAVE RELAY CHANGES ]
+            </button>
+            <a 
+                href="{{ url_for('mailers_page') }}" 
+                class="flex-1 py-3 brutal-btn-white text-xs font-extrabold tracking-wider text-center"
+            >
+                [ CANCEL ]
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

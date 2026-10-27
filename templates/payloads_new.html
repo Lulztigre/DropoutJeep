@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ PAYLOAD_GENERATOR_SUITE ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Weaponization & delivery payload generators for authorized simulations</p>
+  </header>
+
+  <!-- Sub-tabs -->
+  <div class="flex flex-wrap gap-2 mb-6">
+    <button onclick="switchTab('tab-eq')" id="btn-eq" class="brutal-btn-black px-4 py-2 text-xs">A: EQUATION EDITOR</button>
+    <button onclick="switchTab('tab-rt')" id="btn-rt" class="brutal-btn-white px-4 py-2 text-xs">B: REMOTE TEMPLATE</button>
+    <button onclick="switchTab('tab-sm')" id="btn-sm" class="brutal-btn-white px-4 py-2 text-xs">C: SEARCH-MS LNK</button>
+    <button onclick="switchTab('tab-one')" id="btn-one" class="brutal-btn-white px-4 py-2 text-xs">D: ONENOTE</button>
+    <button onclick="switchTab('tab-vba')" id="btn-vba" class="brutal-btn-white px-4 py-2 text-xs">E: VBA MACRO</button>
+    <button onclick="switchTab('tab-html')" id="btn-html" class="brutal-btn-white px-4 py-2 text-xs">F: HTML SMUGGLER</button>
+  </div>
+
+  <!-- Tab A: Equation Editor -->
+  <div id="tab-eq" class="brutal-card p-6 space-y-4">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ CVE-2017-11882 EQUATION EDITOR DOCX ]</h2>
+    <form action="/admin/payload/equation-editor" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">BEACON PAYLOAD URL *</label>
+          <input type="url" name="payload_url" required placeholder="http://c2.example.com/beacon.exe" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">OUTPUT FILENAME</label>
+          <input type="text" name="filename" value="malicious_equation.docx" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ GENERATE DOCX ]</button>
+    </form>
+  </div>
+
+  <!-- Tab B: Remote Template -->
+  <div id="tab-rt" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ CVE-2017-0199 REMOTE TEMPLATE / HTA ]</h2>
+    <form action="/admin/payload/remote-template" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">FORMAT</label>
+          <select name="format" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="docx">Remote Template DOCX</option>
+            <option value="hta">HTA Dropper</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">TEMPLATE / ATTACKER URL</label>
+          <input type="url" name="template_url" placeholder="http://attacker.com/template.dot" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">PAYLOAD URL (FOR HTA)</label>
+          <input type="url" name="payload_url" placeholder="http://attacker.com/beacon.exe" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ GENERATE PAYLOAD ]</button>
+    </form>
+  </div>
+
+  <!-- Tab C: search-ms LNK -->
+  <div id="tab-sm" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ SEARCH-MS LNK & CONNECTOR ]</h2>
+    <form action="/admin/payload/search-ms" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">WEBDAV SERVER URL *</label>
+          <input type="url" name="webdav_url" required placeholder="http://webdav.attacker.com/share" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">FILE TYPE</label>
+          <select name="file_type" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="lnk">Windows LNK Shortcut (.lnk)</option>
+            <option value="searchConnector-ms">searchConnector-ms File</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ GENERATE FILE ]</button>
+    </form>
+  </div>
+
+  <!-- Tab D: OneNote -->
+  <div id="tab-one" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ ONENOTE PACKAGE (.ONE) ]</h2>
+    <form action="/admin/payload/onenote" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">PAYLOAD FILE *</label>
+          <input type="file" name="payload_file" required class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">OUTPUT ONENOTE FILENAME</label>
+          <input type="text" name="output_filename" value="invoice_details.one" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ GENERATE .ONE FILE ]</button>
+    </form>
+  </div>
+
+  <!-- Tab E: VBA Macro -->
+  <div id="tab-vba" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ VBA MACRO GENERATOR ]</h2>
+    <form action="/admin/payload/macro" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">PAYLOAD URL *</label>
+          <input type="url" name="payload_url" required placeholder="http://c2.example.com/stager.exe" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">OBFUSCATION METHOD</label>
+          <select name="obfuscation" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="chr">Chr() Encoding</option>
+            <option value="concat">String Concatenation</option>
+            <option value="callbyname">CallByName API</option>
+            <option value="mixed">Mixed Obfuscation</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">DOCUMENT FORMAT</label>
+          <select name="format" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="docm">Word Macro-Enabled (.docm)</option>
+            <option value="doc">Word 97-2003 (.doc)</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ GENERATE MACRO DOCUMENT ]</button>
+    </form>
+  </div>
+
+  <!-- Tab F: HTML Smuggler -->
+  <div id="tab-html" class="brutal-card p-6 space-y-4 hidden">
+    <h2 class="text-xl font-bold border-b-2 border-pure-black dark:border-stark-white pb-2">[ HTML SMUGGLER DROPPER ]</h2>
+    <form action="/admin/payload/smuggler" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">PAYLOAD FILE TO SMUGGLE *</label>
+          <input type="file" name="payload_file" required class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">PAGE TITLE</label>
+          <input type="text" name="title" value="Secure Document Portal" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ GENERATE SMUGGLED HTML ]</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabId) {
+    ['tab-eq', 'tab-rt', 'tab-sm', 'tab-one', 'tab-vba', 'tab-html'].forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+    document.getElementById(tabId).classList.remove('hidden');
+
+    ['btn-eq', 'btn-rt', 'btn-sm', 'btn-one', 'btn-vba', 'btn-html'].forEach(id => {
+      document.getElementById(id).className = 'brutal-btn-white px-4 py-2 text-xs';
+    });
+    const activeBtn = 'btn-' + tabId.replace('tab-', '');
+    document.getElementById(activeBtn).className = 'brutal-btn-black px-4 py-2 text-xs';
+  }
+</script>
+{% endblock %}

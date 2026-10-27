@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set hide_nav = true %}
+{% block content %}
+<div class="max-w-md mx-auto py-12 font-mono-brutal">
+  <div class="border-4 border-pure-black bg-stark-white p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+    
+    <header class="mb-6 border-b-2 border-pure-black pb-4 text-center">
+      <h1 class="text-3xl font-black text-pure-black uppercase">[ AUTH ]</h1>
+      <p class="text-xs text-brutal-red font-bold mt-1">&gt; Input username and password to authenticate session</p>
+    </header>
+
+    {% if error %}
+      <div class="mb-4 border-2 border-pure-black bg-brutal-red text-white p-3 font-bold text-xs uppercase">
+        [ALERT] {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-xs font-bold text-pure-black mb-1.5 uppercase">USERNAME</label>
+        <input type="text" name="username" required autofocus class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="admin">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-pure-black mb-1.5 uppercase">PASSWORD</label>
+        <input type="password" name="password" required class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="••••••••">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" id="remember" name="remember" value="1" class="w-4 h-4 border-2 border-pure-black accent-brutal-red">
+        <label for="remember" class="text-xs font-bold text-pure-black cursor-pointer">REMEMBER ME ON THIS DEVICE</label>
+      </div>
+
+      <button class="w-full py-3 brutal-btn-black text-xs font-extrabold tracking-wider mt-2" type="submit">
+        [ AUTHENTICATE ]
+      </button>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

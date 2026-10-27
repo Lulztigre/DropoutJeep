@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ C2_ADVANCED_CONFIGURATION ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Domain Fronting, SaaS Traffic Mimicry, WebSocket C2, & Dead-Drop Resolvers</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Domain Fronting -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-emerald">[ DOMAIN_FRONTING ]</h2>
+      <form onsubmit="testFronting(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">CDN PROVIDER</label>
+          <select id="front_provider" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+            <option value="azure">Azure CDN (front: ajax.aspnetcdn.com)</option>
+            <option value="cloudflare">Cloudflare (front: cdn.cloudflare.com)</option>
+            <option value="fastly">Fastly (front: dualstack.a.ssl.fastly.net)</option>
+            <option value="cloudfront">Amazon CloudFront (front: d111111abcdef8.cloudfront.net)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">BACKEND HOST *</label>
+          <input type="text" id="front_backend" required value="c2-backend.myteam.com" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <button type="submit" class="brutal-btn-black px-4 py-2 text-xs">[ TEST FRONTING CONNECTION ]</button>
+      </form>
+      <pre id="front-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+
+    <!-- SaaS Mimicry -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-amber">[ SAAS_TRAFFIC_MIMICRY ]</h2>
+      <form onsubmit="testSaasBeacon(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">PROTOCOL</label>
+          <select id="saas_proto" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] text-xs">
+            <option value="teams">Microsoft Teams Webhook / API</option>
+            <option value="slack">Slack Bot API</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">TOKEN / BOT TOKEN</label>
+          <input type="text" id="saas_token" value="xoxb-123456789-abcdef" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">BEACON PAYLOAD DATA</label>
+          <input type="text" id="saas_data" value="checkin:hostname=DC01" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <button type="submit" class="brutal-btn-black px-4 py-2 text-xs">[ BUILD BEACON REQUEST ]</button>
+      </form>
+      <pre id="saas-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- WebSocket C2 -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-red">[ WEBSOCKET_C2_CHANNEL ]</h2>
+      <p class="text-xs text-gray-600 dark:text-gray-400">Endpoint: <code class="bg-black text-white px-1">wss://{domain}/ws/c2/{token}</code></p>
+      <div class="p-3 border border-pure-black bg-off-white dark:bg-black text-xs font-mono">
+        STATUS: <span class="text-brutal-emerald font-bold">READY / LISTENING</span>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">QUEUE TASK TO IMPLANT</label>
+        <div class="flex gap-2">
+          <input type="text" id="ws_cmd" placeholder="whoami /all" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+          <button onclick="alert('Task queued into WebSocket channel stream.')" class="brutal-btn-black px-4 py-2 text-xs flex-shrink-0">QUEUE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dead-Drop Resolver -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-pure-black dark:text-stark-white">[ DEAD_DROP_RESOLVER ]</h2>
+      <form onsubmit="resolveDeadDrop(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">DEAD-DROP SOURCE URL / GIST / PASTEBIN *</label>
+          <input type="text" id="dd_source" required value="https://gist.github.com/raw/example" class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <button type="submit" class="brutal-btn-black px-4 py-2 text-xs">[ RESOLVE DEAD-DROP ]</button>
+      </form>
+      <pre id="dd-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function testFronting(e) {
+    e.preventDefault();
+    const out = document.getElementById('front-out');
+    out.classList.remove('hidden');
+    out.textContent = "Testing domain fronting connection...";
+    try {
+      const res = await fetch('/admin/c2/fronting/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: document.getElementById('front_provider').value,
+          backend_host: document.getElementById('front_backend').value
+        })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+
+  async function testSaasBeacon(e) {
+    e.preventDefault();
+    const out = document.getElementById('saas-out');
+    out.classList.remove('hidden');
+    const proto = document.getElementById('saas_proto').value;
+    const url = proto === 'teams' ? '/admin/c2/saas/teams' : '/admin/c2/saas/slack';
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: document.getElementById('saas_token').value,
+          bot_token: document.getElementById('saas_token').value,
+          data: document.getElementById('saas_data').value
+        })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+
+  async function resolveDeadDrop(e) {
+    e.preventDefault();
+    const out = document.getElementById('dd-out');
+    out.classList.remove('hidden');
+    out.textContent = "Resolving dead-drop location...";
+    try {
+      const res = await fetch('/admin/c2/dead-drop/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: document.getElementById('dd_source').value })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+</script>
+{% endblock %}

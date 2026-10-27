@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block block_content %}
+{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ ANALYTICS ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Campaign: {{ campaign.name }} (#{{ campaign.id }})</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black mb-4 border-b-2 border-pure-black pb-2">[ EXPORTS ]</h2>
+      <div class="space-y-3">
+        <a href="{{ url_for('admin_campaign_export_csv', cid=campaign.id) }}" class="block w-full py-2 border-2 border-pure-black bg-stark-white text-center hover:bg-pure-black hover:text-white transition-all">DOWNLOAD CSV</a>
+        <a href="{{ url_for('admin_campaign_export_pdf', cid=campaign.id) }}" class="block w-full py-2 border-2 border-pure-black bg-stark-white text-center hover:bg-pure-black hover:text-white transition-all">DOWNLOAD PDF</a>
+      </div>
+    </div>
+
+    <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <h2 class="text-lg font-black mb-4 border-b-2 border-pure-black pb-2">[ HEATMAP ]</h2>
+      <p class="text-xs text-gray-600 mb-2">{{ heatmap|length }} click points recorded</p>
+      <a href="{{ url_for('admin_campaign_funnel', cid=campaign.id) }}" class="text-xs underline">Back to funnel</a>
+    </div>
+  </div>
+
+  <div class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <h2 class="text-lg font-black mb-4 border-b-2 border-pure-black pb-2">[ CLICK POINTS ]</h2>
+    {% if heatmap %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b-2 border-pure-black">
+          <tr>
+            <th class="py-2">Time</th>
+            <th class="py-2">Recipient</th>
+            <th class="py-2">X</th>
+            <th class="py-2">Y</th>
+            <th class="py-2">Selector</th>
+            <th class="py-2">Path</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in heatmap %}
+          <tr class="border-b border-off-white">
+            <td class="py-2">{{ p.created_at }}</td>
+            <td class="py-2">{{ p.recipient_id }}</td>
+            <td class="py-2">{{ p.x }}</td>
+            <td class="py-2">{{ p.y }}</td>
+            <td class="py-2"><code>{{ p.selector }}</code></td>
+            <td class="py-2">{{ p.path }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500">No heatmap data yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

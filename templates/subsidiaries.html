@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ SUBSIDIARIES ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Sending identities. The domain here is the one you own and sign with.</p>
+    </div>
+    <div class="flex gap-3">
+      <a class="px-4 py-2.5 brutal-btn-black text-xs text-center" href="/admin/subsidiary/new">NEW SUBSIDIARY</a>
+      <a class="px-4 py-2.5 brutal-btn-black text-xs text-center" href="/admin/sending_profile/new">NEW SENDING PROFILE</a>
+    </div>
+  </header>
+
+  {% if not subs %}
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+      <p class="text-sm font-bold text-[var(--dj-fg)]">No subsidiaries yet.</p>
+      <p class="text-xs mt-2 text-[var(--dj-fg)]">Create one with the sending domain you own, then generate its DKIM key.</p>
+    </div>
+  {% else %}
+    <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="border-b-4 border-pure-black dark:border-stark-white text-left uppercase">
+            <th class="px-3 py-3">Name</th>
+            <th class="px-3 py-3">Sending domain</th>
+            <th class="px-3 py-3">Display name</th>
+            <th class="px-3 py-3">From address</th>
+            <th class="px-3 py-3">Bounce sub</th>
+            <th class="px-3 py-3">Selector</th>
+            <th class="px-3 py-3">DKIM key</th>
+            <th class="px-3 py-3">Profiles</th>
+            <th class="px-3 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in subs %}
+          <tr class="border-b-2 border-pure-black dark:border-stark-white">
+            <td class="px-3 py-3 font-bold">{{ s.name }}</td>
+            <td class="px-3 py-3">{{ s.sending_domain }}</td>
+            <td class="px-3 py-3">{{ s.display_name }}</td>
+            <td class="px-3 py-3">{{ s.from_address }}</td>
+            <td class="px-3 py-3">{% if s.bounce_subdomain %}{{ s.bounce_subdomain }}{% else %}<span class="opacity-60">blank</span>{% endif %}</td>
+            <td class="px-3 py-3">{% if s.dkim_selector %}{{ s.dkim_selector }}{% else %}<span class="text-brutal-red font-bold">none</span>{% endif %}</td>
+            <td class="px-3 py-3">
+              {% if key_state[s.id] == 'stored' %}
+                <span class="font-bold">stored</span>
+              {% elif key_state[s.id] == 'unreadable' %}
+                <span class="text-brutal-red font-bold">unreadable</span>
+              {% else %}
+                <span class="text-brutal-red font-bold">missing</span>
+              {% endif %}
+            </td>
+            <td class="px-3 py-3">{{ profile_counts[s.id] }}</td>
+            <td class="px-3 py-3">
+              <div class="flex flex-col gap-2">
+                <a class="underline font-bold" href="{{ url_for('sending_admin.admin_subsidiary_edit', sid=s.id) }}">EDIT</a>
+                <form method="post" action="{{ url_for('sending_admin.admin_subsidiary_delete', sid=s.id) }}" onsubmit="return confirm('Delete this subsidiary?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="underline font-bold text-brutal-red">DELETE</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-xs mt-4">
+      A subsidiary whose From address is on a different domain than its sending domain will fail DMARC alignment at the receiver.
+      That is what the spoof arm wants; it is not what a delivery arm wants.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

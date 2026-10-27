@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <!-- Header -->
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ TEMPLATE_MARKETPLACE ]</h1>
+      <p class="text-sm text-brutal-red font-bold">&gt; Explore built-in email templates or create custom phishing & awareness templates</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="#create-template-form" class="brutal-btn-black px-4 py-2 text-xs flex items-center gap-1.5">
+        <span>+</span> CREATE CUSTOM TEMPLATE
+      </a>
+    </div>
+  </header>
+
+  <!-- Category Navigation Pills -->
+  <div class="flex flex-wrap items-center gap-2 mb-8 border-4 border-pure-black dark:border-stark-white bg-stark-white dark:bg-card-bg p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <span class="text-xs font-black text-pure-black dark:text-stark-white mr-2 uppercase">CATEGORIES:</span>
+    <a href="{{ url_for('templates_admin.admin_templates') }}"
+       class="px-3 py-1.5 text-xs font-bold transition-all border-2 border-pure-black dark:border-stark-white {% if not current_category %}bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black{% else %}bg-stark-white text-pure-black hover:bg-gray-200 dark:bg-black dark:text-stark-white dark:hover:bg-neutral-800{% endif %}">
+      ALL TEMPLATES
+    </a>
+    {% for cat in categories %}
+    <a href="{{ url_for('templates_admin.admin_templates', category=cat) }}"
+       class="px-3 py-1.5 text-xs font-bold transition-all border-2 border-pure-black dark:border-stark-white {% if current_category == cat %}bg-pure-black text-stark-white dark:bg-stark-white dark:text-pure-black{% else %}bg-stark-white text-pure-black hover:bg-gray-200 dark:bg-black dark:text-stark-white dark:hover:bg-neutral-800{% endif %}">
+      {{ cat | upper }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Templates Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+    {% for t in templates %}
+    <div class="border-4 border-pure-black dark:border-stark-white bg-stark-white dark:bg-card-bg p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)] flex flex-col justify-between">
+      <div>
+        <div class="flex justify-between items-start gap-2 mb-3">
+          <h3 class="text-base font-extrabold text-pure-black dark:text-stark-white uppercase tracking-tight line-clamp-1" title="{{ t.name }}">{{ t.name }}</h3>
+          {% if t.is_builtin %}
+          <span class="text-[10px] font-black border-2 border-pure-black dark:border-stark-white px-2 py-0.5 bg-brutal-amber text-pure-black">BUILTIN</span>
+          {% else %}
+          <span class="text-[10px] font-black border-2 border-pure-black dark:border-stark-white px-2 py-0.5 bg-brutal-emerald text-stark-white">CUSTOM</span>
+          {% endif %}
+        </div>
+
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-brutal-red uppercase">[ {{ t.category }} ]</span>
+          <span class="text-[10px] font-bold text-gray-500">ID: #{{ t.id }}</span>
+        </div>
+
+        <p class="text-xs font-medium text-gray-700 dark:text-gray-300 mb-4 min-h-[36px]">
+          {{ t.description or 'No description provided.' }}
+        </p>
+
+        {% if t.subject %}
+        <div class="mb-3 p-2 border-2 border-pure-black dark:border-stark-white bg-gray-50 dark:bg-black/40 text-xs">
+          <span class="font-bold text-pure-black dark:text-stark-white">SUBJECT:</span>
+          <span class="text-gray-700 dark:text-gray-300 font-mono">{{ t.subject }}</span>
+        </div>
+        {% endif %}
+
+        {% if t.get_tags() %}
+        <div class="flex flex-wrap gap-1 mb-4">
+          {% for tag in t.get_tags() %}
+          <span class="text-[10px] font-bold px-1.5 py-0.5 bg-gray-200 dark:bg-neutral-800 text-pure-black dark:text-stark-white border border-pure-black dark:border-stark-white">#{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="pt-4 border-t-2 border-pure-black dark:border-stark-white space-y-3">
+        <form method="post" action="{{ url_for('templates_admin.admin_template_import_to_campaign', template_id=t.id, campaign_id=0) }}" id="import-form-{{ t.id }}" class="space-y-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="block text-[11px] font-black uppercase text-pure-black dark:text-stark-white">IMPORT INTO CAMPAIGN</label>
+          <div class="flex gap-2">
+            <select name="campaign_id" required
+                    onchange="document.getElementById('import-form-{{ t.id }}').action='{{ url_for('templates_admin.admin_template_import_to_campaign', template_id=t.id, campaign_id=0) }}'.replace('/0', '/'+this.value)"
+                    class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-stark-white dark:bg-black text-xs text-pure-black dark:text-stark-white focus:outline-none">
+              <option value="">-- Select Campaign --</option>
+              {% for c in campaigns %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="brutal-btn-black px-4 py-2 text-xs font-extrabold whitespace-nowrap">IMPORT</button>
+          </div>
+        </form>
+
+        {% if not t.is_builtin %}
+        <form method="post" action="{{ url_for('templates_admin.admin_template_delete', template_id=t.id) }}" onsubmit="return confirm('Delete template {{ t.name }}?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="w-full px-3 py-1.5 brutal-btn-red text-[11px] font-extrabold tracking-wide">DELETE TEMPLATE</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-full border-4 border-pure-black dark:border-stark-white bg-stark-white dark:bg-card-bg p-8 text-center">
+      <p class="text-sm font-bold text-gray-500 dark:text-gray-400">No templates found in this category.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Create Custom Template Form -->
+  <section id="create-template-form" class="border-4 border-pure-black dark:border-stark-white bg-stark-white dark:bg-card-bg p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <div class="border-b-4 border-pure-black dark:border-stark-white pb-4 mb-6 flex justify-between items-center">
+      <h2 class="text-2xl font-black text-pure-black dark:text-stark-white uppercase tracking-tight">[ CREATE_CUSTOM_TEMPLATE ]</h2>
+      <span class="text-xs font-bold text-brutal-red uppercase">&gt; LIVE CODE &amp; PREVIEW ENGINE</span>
+    </div>
+
+    <form method="post" action="{{ url_for('templates_admin.admin_template_new') }}" class="space-y-6 text-sm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-xs font-bold text-pure-black dark:text-stark-white mb-1.5 uppercase">TEMPLATE NAME <span class="text-brutal-red">*</span></label>
+          <input type="text" name="name" placeholder="e.g., Executive Urgent Review" required
+                 class="w-full bg-stark-white dark:bg-black border-2 border-pure-black dark:border-stark-white p-2.5 text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black dark:text-stark-white mb-1.5 uppercase">CATEGORY</label>
+          <input type="text" name="category" placeholder="e.g., executive, hr, finance"
+                 class="w-full bg-stark-white dark:bg-black border-2 border-pure-black dark:border-stark-white p-2.5 text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black dark:text-stark-white mb-1.5 uppercase">DESCRIPTION</label>
+          <input type="text" name="description" placeholder="Brief summary of scenario"
+                 class="w-full bg-stark-white dark:bg-black border-2 border-pure-black dark:border-stark-white p-2.5 text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-pure-black dark:text-stark-white mb-1.5 uppercase">TAGS (COMMA SEPARATED)</label>
+          <input type="text" name="tags" placeholder="e.g., urgent, mfa, executive"
+                 class="w-full bg-stark-white dark:bg-black border-2 border-pure-black dark:border-stark-white p-2.5 text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-pure-black dark:text-stark-white mb-1.5 uppercase">EMAIL SUBJECT <span class="text-brutal-red">*</span></label>
+          <input type="text" name="subject" placeholder="Action Required: Confirm Board Document Access" required
+                 class="w-full bg-stark-white dark:bg-black border-2 border-pure-black dark:border-stark-white p-2.5 text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none">
+        </div>
+      </div>
+
+      <!-- Email Body HTML Editor & Preview -->
+      <div class="border-2 border-pure-black dark:border-stark-white p-4 bg-gray-50 dark:bg-black/30">
+        <h3 class="text-sm font-black text-pure-black dark:text-stark-white mb-3 uppercase">[ EMAIL_HTML_TEMPLATE ]</h3>
+        <div class="text-xs text-gray-600 dark:text-gray-400 font-bold mb-4 flex flex-wrap items-center gap-1.5">
+          <span>PLACEHOLDERS:</span>
+          <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{TRACK_LINK}}')" class="border border-pure-black dark:border-stark-white bg-stark-white dark:bg-black px-1.5 py-0.5 text-pure-black dark:text-stark-white hover:bg-brutal-amber hover:text-pure-black">{% raw %}{{TRACK_LINK}}{% endraw %}</button>
+          <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{UNSUBSCRIBE_LINK}}')" class="border border-pure-black dark:border-stark-white bg-stark-white dark:bg-black px-1.5 py-0.5 text-pure-black dark:text-stark-white hover:bg-brutal-amber hover:text-pure-black">{% raw %}{{UNSUBSCRIBE_LINK}}{% endraw %}</button>
+          <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{PIXEL}}')" class="border border-pure-black dark:border-stark-white bg-stark-white dark:bg-black px-1.5 py-0.5 text-pure-black dark:text-stark-white hover:bg-brutal-amber hover:text-pure-black">{% raw %}{{PIXEL}}{% endraw %}</button>
+          <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{TOKEN}}')" class="border border-pure-black dark:border-stark-white bg-stark-white dark:bg-black px-1.5 py-0.5 text-pure-black dark:text-stark-white hover:bg-brutal-amber hover:text-pure-black">{% raw %}{{TOKEN}}{% endraw %}</button>
+          <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CALENDAR_LINK}}')" class="border border-pure-black dark:border-stark-white bg-stark-white dark:bg-black px-1.5 py-0.5 text-pure-black dark:text-stark-white hover:bg-brutal-amber hover:text-pure-black">{% raw %}{{CALENDAR_LINK}}{% endraw %}</button>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+          <div class="lg:w-1/2 flex flex-col">
+            <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+              <span>HTML CODE EDITOR</span>
+              <span class="text-brutal-amber font-extrabold text-[10px]">[ LIVE ]</span>
+            </div>
+            <textarea id="bodyHtmlEditor" name="body_html" rows="10" required
+                      class="w-full h-80 bg-stark-white dark:bg-black border-2 border-t-0 border-pure-black dark:border-stark-white p-2.5 font-mono text-xs text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none"><html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>Security Notice</h2>
+    <p>Dear Team Member,</p>
+    <p>Please review and acknowledge the updated compliance documentation:</p>
+    <p style="text-align: center; margin: 30px 0;">
+        <a href="{% raw %}{{TRACK_LINK}}{% endraw %}" style="background: #E11D48; color: white; padding: 12px 30px; text-decoration: none; font-weight: bold; border: 2px solid black;">Review Document</a>
+    </p>
+    <p style="font-size:11px; color:#666666; text-align:center;"><a href="{% raw %}{{UNSUBSCRIBE_LINK}}{% endraw %}">Unsubscribe</a></p>
+    {% raw %}{{PIXEL}}{% endraw %}
+</body>
+</html></textarea>
+          </div>
+          <div class="lg:w-1/2 flex flex-col">
+            <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+              <span>PREVIEW ENGINE</span>
+              <span class="text-gray-400 text-[10px]">LIVE RENDER</span>
+            </div>
+            <iframe id="emailPreview" class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black dark:border-stark-white"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- Landing Page HTML Editor & Preview -->
+      <div class="border-2 border-pure-black dark:border-stark-white p-4 bg-gray-50 dark:bg-black/30">
+        <h3 class="text-sm font-black text-pure-black dark:text-stark-white mb-3 uppercase">[ LANDING_PAGE_TEMPLATE ]</h3>
+        <div class="flex flex-col lg:flex-row gap-6">
+          <div class="lg:w-1/2 flex flex-col">
+            <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+              <span>LANDING HTML EDITOR</span>
+              <span class="text-brutal-amber font-extrabold text-[10px]">[ LIVE ]</span>
+            </div>
+            <textarea id="landingHtmlEditor" name="landing_html" rows="10"
+                      class="w-full h-80 bg-stark-white dark:bg-black border-2 border-t-0 border-pure-black dark:border-stark-white p-2.5 font-mono text-xs text-pure-black dark:text-stark-white focus:border-brutal-red focus:outline-none"><html>
+<body style="font-family: Arial, sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; background: #F4F4F6;">
+    <div style="background: white; padding: 30px; border: 3px solid black; box-shadow: 4px 4px 0px 0px black;">
+        <h2 style="text-align: center; color: #000; font-weight: 800;">Account Authentication</h2>
+        <form method="post">
+            <input type="hidden" name="token" value="{% raw %}{{TOKEN}}{% endraw %}">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px;">USERNAME</label>
+                <input name="user" type="text" required style="width: 100%; padding: 10px; border: 2px solid black;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px;">PASSWORD</label>
+                <input name="pass" type="password" required style="width: 100%; padding: 10px; border: 2px solid black;">
+            </div>
+            <button type="submit" style="width: 100%; background: #000; color: white; padding: 12px; border: none; font-weight: bold;">Verify Account</button>
+        </form>
+    </div>
+</body>
+</html></textarea>
+          </div>
+          <div class="lg:w-1/2 flex flex-col">
+            <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+              <span>LANDING PREVIEW</span>
+              <span class="text-gray-400 text-[10px]">LIVE RENDER</span>
+            </div>
+            <iframe id="landingPreview" class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black dark:border-stark-white"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 flex justify-end">
+        <button type="submit" class="px-8 py-3 brutal-btn-black text-xs tracking-wider font-extrabold">
+          [ SAVE TEMPLATE TO MARKETPLACE ]
+        </button>
+      </div>
+    </form>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function wrapPreviewHtml(bodyHtml) {
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + bodyHtml + '</body></html>';
+}
+
+function insertTemplateTag(editorId, tag) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    const start = editor.selectionStart || editor.value.length;
+    const end = editor.selectionEnd || editor.value.length;
+    editor.value = editor.value.substring(0, start) + tag + editor.value.substring(end);
+    previewEmailTemplate();
+}
+
+function previewEmailTemplate() {
+    const html = document.getElementById('bodyHtmlEditor').value;
+    const demoHtml = html
+        .replace(/\{\{TRACK_LINK\}\}/g, 'https://demo.local/track/demo-token')
+        .replace(/\{\{UNSUBSCRIBE_LINK\}\}/g, 'https://demo.local/unsubscribe/demo-token')
+        .replace(/\{\{PIXEL\}\}/g, '<img src="https://demo.local/pixel/demo-token" width="1" height="1" alt="">')
+        .replace(/\{\{TOKEN\}\}/g, 'demo-token-xyz')
+        .replace(/\{\{CALENDAR_LINK\}\}/g, 'https://demo.local/calendar/demo-token');
+    const preview = document.getElementById('emailPreview');
+    if (preview) preview.srcdoc = wrapPreviewHtml(demoHtml);
+}
+
+function previewLandingTemplate() {
+    const html = document.getElementById('landingHtmlEditor').value;
+    const demoHtml = html.replace(/\{\{TOKEN\}\}/g, 'demo-token-xyz');
+    const preview = document.getElementById('landingPreview');
+    if (preview) preview.srcdoc = wrapPreviewHtml(demoHtml);
+}
+
+document.getElementById('bodyHtmlEditor').addEventListener('input', previewEmailTemplate);
+document.getElementById('landingHtmlEditor').addEventListener('input', previewLandingTemplate);
+
+previewEmailTemplate();
+previewLandingTemplate();
+</script>
+{% endblock %}

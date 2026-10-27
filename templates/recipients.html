@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold font-mono-brutal tracking-tight text-pure-black mb-2">[ RECIPIENTS_LEDGER ]</h1>
+    <p class="text-sm font-mono-brutal text-brutal-red font-bold">&gt; Target list and disposition telemetry registry</p>
+  </header>
+
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <h2 class="text-sm font-bold font-mono-brutal tracking-wide text-[var(--dj-fg)] mb-4 uppercase">[ BULK_IMPORT_RECIPIENTS ]</h2>
+    <form method="post" action="/api/v1/recipients/bulk" enctype="multipart/form-data" class="flex flex-col md:flex-row gap-4 items-end font-mono-brutal text-sm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="flex-grow">
+        <label class="block font-bold mb-1">CSV or Excel file</label>
+        <input type="file" name="file" accept=".csv,.xlsx" required class="w-full p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+      </div>
+      <div>
+        <label class="block font-bold mb-1">Campaign</label>
+        <select name="campaign_id" class="p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]" required>
+          <option value="">-- Select campaign --</option>
+          {% for c in campaigns %}
+          <option value="{{ c.id }}" {% if selected_campaign_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="skip_duplicates" value="1" checked id="skip_dup" class="w-4 h-4 border-2 border-pure-black dark:border-stark-white">
+        <label for="skip_dup" class="font-bold">Skip duplicates</label>
+      </div>
+      <button type="submit" class="brutal-btn-black px-6 py-2">IMPORT</button>
+    </form>
+    <p class="text-xs text-gray-600 dark:text-gray-400 mt-2 font-mono-brutal">Required column: <code>email</code>. Optional: <code>name</code>, <code>external_id</code>.</p>
+  </div>
+
+  <div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono-brutal text-sm min-w-[800px]">
+        <thead>
+          <tr class="border-b-2 border-pure-black dark:border-stark-white text-gray-600 dark:text-gray-400 text-xs">
+            <th class="py-3 px-2 font-bold">RECIPIENT EMAIL</th>
+            <th class="py-3 px-2 font-bold">CAMPAIGN NAME</th>
+            <th class="py-3 px-2 font-bold">SENT TIMESTAMP</th>
+            <th class="py-3 px-2 font-bold text-center">RISK</th>
+            <th class="py-3 px-2 font-bold text-right">DISPOSITION STATUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recipients %}
+          {% set risk = risk_map[r.id] %}
+          <tr class="border-b border-off-white dark:border-gray-800 hover:bg-off-white dark:hover:bg-gray-900 transition-colors">
+            <td class="py-3 px-2 text-[var(--dj-fg)] font-extrabold">{{ r.email }}</td>
+            <td class="py-3 px-2 font-bold text-gray-700 dark:text-gray-300">{{ r.campaign.name if r.campaign else 'none-assigned' }}</td>
+            <td class="py-3 px-2 text-gray-500 dark:text-gray-400 font-bold">{{ r.sent_at or 'unsent' }}</td>
+            <td class="py-3 px-2 text-center">
+              {% if risk.bucket == 'critical' %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-brutal-red text-white uppercase" title="Score: {{ risk.score }}">[CRITICAL {{ risk.score }}]</span>
+              {% elif risk.bucket == 'high' %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-brutal-amber text-pure-black uppercase" title="Score: {{ risk.score }}">[HIGH {{ risk.score }}]</span>
+              {% elif risk.bucket == 'medium' %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-brutal-emerald text-white uppercase" title="Score: {{ risk.score }}">[MED {{ risk.score }}]</span>
+              {% else %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-[var(--dj-card)] text-gray-500 dark:text-gray-400 uppercase" title="Score: {{ risk.score }}">[LOW {{ risk.score }}]</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-2 text-right">
+              {% if r.disposition == 'delivered' %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-brutal-emerald text-white uppercase">[DELIVERED]</span>
+              {% elif r.disposition == 'quarantined' %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-brutal-amber text-pure-black uppercase">[QUARANTINED]</span>
+              {% elif r.disposition == 'failed' %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-brutal-red text-white uppercase">[FAILED]</span>
+              {% else %}
+                <span class="px-2 py-0.5 text-xs font-bold border border-pure-black dark:border-stark-white bg-[var(--dj-card)] text-gray-500 dark:text-gray-400 uppercase">[STAGED]</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="p-8 text-center text-gray-500 dark:text-gray-400 font-mono-brutal" colspan="5">
+              [ NO RECIPIENTS ENROLLED ]
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

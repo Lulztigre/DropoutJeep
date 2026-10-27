@@ -1,0 +1,42 @@
+#cloud-config
+# DropoutJeep VPS cloud-init.
+#
+# Hand this to the provider as "user data" / "cloud-init" when you create the
+# server. It installs git, drops the bootstrap settings, clones the repo and
+# runs deploy/bootstrap.sh, which does the rest.
+#
+# Placeholders in __DOUBLE_UNDERSCORES__ are filled by deploy.ps1. Do not edit
+# the copy in the repo, edit the template or pass values to the script.
+
+package_update: true
+package_upgrade: false
+packages:
+  - git
+  - curl
+  - ca-certificates
+  - rsync
+
+write_files:
+  - path: /etc/dropoutjeep.env
+    owner: root:root
+    permissions: '0600'
+    content: |
+      DOMAIN=__DOMAIN__
+      ADMIN_USER=__ADMIN_USER__
+      ADMIN_IP=__ADMIN_IP__
+      REPO_URL=__REPO_URL__
+      BRANCH=__BRANCH__
+
+runcmd:
+  - |
+    set -e
+    set -a
+    . /etc/dropoutjeep.env
+    set +a
+    mkdir -p /var/log
+    if [ ! -d /opt/dropoutjeep/.git ]; then
+      git clone --depth 1 --branch "$BRANCH" "$REPO_URL" /opt/dropoutjeep
+    fi
+    bash /opt/dropoutjeep/deploy/bootstrap.sh 2>&1 | tee -a /var/log/dropoutjeep-bootstrap.log
+
+final_message: "DropoutJeep bootstrap finished after $UPTIME seconds. Log: /var/log/dropoutjeep-bootstrap.log"

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ PERSISTENCE_MODULES ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; COM Hijacking, .NET Profiler, & IFEO Debugger persistence configurations</p>
+  </header>
+
+  <div class="brutal-card p-6 space-y-6">
+    <form onsubmit="generatePersistence(event)" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">MODULE TYPE *</label>
+          <select id="p_module" onchange="toggleModuleFields()" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="com_hijack">COM Hijacking</option>
+            <option value="dotnet_profiler">.NET Profiler Environment Variable</option>
+            <option value="ifeo">Image File Execution Options (IFEO)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">DLL / IMPLANT PATH *</label>
+          <input type="text" id="p_dll" required value="C:\Users\Public\implant.dll" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+      </div>
+
+      <!-- Module Specific Fields -->
+      <div id="com-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">CLSID</label>
+          <input type="text" id="p_clsid" value="{1F2E3D4C-5B6A-7B8C-9D0E-1F2E3D4C5B6A}" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">REGISTRY SCOPE</label>
+          <select id="p_scope" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="HKCU">HKCU (Current User - User Rights)</option>
+            <option value="HKLM">HKLM (Local Machine - Admin Rights)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="ifeo-fields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold mb-1">TARGET EDR / PROCESS</label>
+          <select id="p_edr" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+            <option value="Defender">MsMpEng.exe (Windows Defender)</option>
+            <option value="CrowdStrike">CSFalconService.exe (CrowdStrike)</option>
+            <option value="SentinelOne">SentinelAgent.exe (SentinelOne)</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="brutal-btn-black px-6 py-2.5 text-xs">[ GENERATE PERSISTENCE CONFIG ]</button>
+    </form>
+
+    <div id="p-results" class="hidden space-y-4 border-t-2 border-pure-black dark:border-stark-white pt-4">
+      <h3 class="text-sm font-bold text-brutal-emerald">&gt; GENERATED COMMANDS & CONFIGURATION:</h3>
+      <div>
+        <span class="text-xs font-bold block mb-1">POWERSHELL INSTALL COMMAND:</span>
+        <pre id="p-install-cmd" class="bg-black text-emerald-400 p-3 font-mono text-xs border-2 border-pure-black overflow-x-auto select-all"></pre>
+      </div>
+      <div>
+        <span class="text-xs font-bold block mb-1">POWERSHELL REMOVE COMMAND:</span>
+        <pre id="p-remove-cmd" class="bg-black text-emerald-400 p-3 font-mono text-xs border-2 border-pure-black overflow-x-auto select-all"></pre>
+      </div>
+      <div>
+        <span class="text-xs font-bold block mb-1">CONFIG JSON:</span>
+        <pre id="p-config-json" class="bg-black text-gray-300 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleModuleFields() {
+    const mod = document.getElementById('p_module').value;
+    if (mod === 'ifeo') {
+      document.getElementById('com-fields').classList.add('hidden');
+      document.getElementById('ifeo-fields').classList.remove('hidden');
+    } else {
+      document.getElementById('com-fields').classList.remove('hidden');
+      document.getElementById('ifeo-fields').classList.add('hidden');
+    }
+  }
+
+  async function generatePersistence(e) {
+    e.preventDefault();
+    document.getElementById('p-results').classList.remove('hidden');
+    document.getElementById('p-install-cmd').textContent = "Generating...";
+    document.getElementById('p-remove-cmd').textContent = "Generating...";
+    document.getElementById('p-config-json').textContent = "Generating...";
+
+    try {
+      const res = await fetch('/admin/persistence/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          module: document.getElementById('p_module').value,
+          dll_path: document.getElementById('p_dll').value,
+          clsid: document.getElementById('p_clsid').value,
+          scope: document.getElementById('p_scope').value,
+          target_edr: document.getElementById('p_edr').value,
+          implant_path: document.getElementById('p_dll').value
+        })
+      });
+      const data = await res.json();
+      document.getElementById('p-install-cmd').textContent = data.install_cmd || data.powershell_cmd || JSON.stringify(data);
+      document.getElementById('p-remove-cmd').textContent = data.remove_cmd || "N/A";
+      document.getElementById('p-config-json').textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      alert("Error: " + err);
+    }
+  }
+</script>
+{% endblock %}

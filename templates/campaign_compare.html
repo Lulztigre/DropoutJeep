@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 font-mono-brutal">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6">
+    <a href="/campaigns" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN LIST ]
+    </a>
+  </div>
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ CAMPAIGN COMPARE ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Side-by-side engagement metrics</p>
+  </header>
+
+  {% if summaries %}
+  <div class="overflow-x-auto border-4 border-pure-black bg-stark-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+    <table class="w-full text-sm">
+      <thead class="bg-pure-black text-stark-white text-left">
+        <tr>
+          <th class="p-3">Metric</th>
+          {% for s in summaries %}
+          <th class="p-3 border-l border-stark-white">{{ s.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-off-white">
+        <tr>
+          <td class="p-3 font-bold">Recipients</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white">{{ s.total_recipients }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td class="p-3 font-bold">Sent</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white">{{ s.sent }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td class="p-3 font-bold">Opened</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white">{{ s.opened }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td class="p-3 font-bold">Clicked</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white">{{ s.clicked }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td class="p-3 font-bold">Credentials</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white text-brutal-red">{{ s.credentials }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td class="p-3 font-bold">Click Rate (of opened)</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white">{{ s.click_rate }}%</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td class="p-3 font-bold">Conversion Rate (of clicked)</td>
+          {% for s in summaries %}
+          <td class="p-3 border-l border-off-white">{{ s.conversion_rate }}%</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-gray-500">No campaigns found for the selected IDs.</p>
+  {% endif %}
+
+  <div class="mt-6">
+    <a href="/campaigns" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN LIST ]
+    </a>
+  </div>
+</div>
+{% endblock %}

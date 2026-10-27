@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="{{ url_for('campaigns_admin.admin_campaign_info', cid=campaign.id) }}" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO CAMPAIGN INFO ]
+    </a>
+  </div>
+  <h1 class="text-3xl font-extrabold font-mono-brutal mb-2">VERSIONS</h1>
+  <p class="font-mono-brutal mb-6">{{ campaign.name }}</p>
+
+  <div class="brutal-card p-6 mb-8">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">Save Current Version</h2>
+    <form method="post" action="{{ url_for('admin_campaign_version_create', campaign_id=campaign.id) }}" class="flex flex-col md:flex-row gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="notes" placeholder="Notes (optional)" class="flex-grow p-2 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+      <button type="submit" class="brutal-btn-black px-6 py-2">SAVE SNAPSHOT</button>
+    </form>
+  </div>
+
+  <div class="brutal-card p-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">History</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[700px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Version</th>
+            <th class="text-left py-2">Name</th>
+            <th class="text-left py-2">Subject</th>
+            <th class="text-left py-2">Notes</th>
+            <th class="text-left py-2">Created</th>
+            <th class="text-right py-2">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in versions %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2">#{{ v.version_number }}</td>
+            <td class="py-2">{{ v.name }}</td>
+            <td class="py-2">{{ v.subject }}</td>
+            <td class="py-2">{{ v.notes or '-' }}</td>
+            <td class="py-2">{{ v.created_at.strftime('%Y-%m-%d %H:%M') if v.created_at else '-' }}</td>
+            <td class="py-2 text-right">
+              <form method="post" action="{{ url_for('admin_campaign_version_restore', campaign_id=campaign.id, version_id=v.id) }}" class="inline" onsubmit="return confirm('Restore this version? Current state will be saved first.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-white px-3 py-1 text-xs">RESTORE</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="py-4 text-gray-500 dark:text-gray-400">No versions saved yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

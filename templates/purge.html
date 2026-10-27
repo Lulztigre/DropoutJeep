@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+  <h1 class="text-3xl font-extrabold font-mono-brutal mb-6">PURGE EVENTS</h1>
+
+  <div class="brutal-card p-6 mb-8">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4">Event Inventory</h2>
+    <p class="text-sm font-mono-brutal mb-4">
+      Total events: <span class="font-bold">{{ total_events }}</span>.
+      Default retention is <span class="font-bold">{{ retention_days }} days</span>;
+      <span class="font-bold">{{ retention_count }}</span> events are currently older than that.
+    </p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm font-mono-brutal min-w-[400px]">
+        <thead class="border-b-2 border-pure-black dark:border-stark-white">
+          <tr>
+            <th class="text-left py-2">Event Type</th>
+            <th class="text-right py-2">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event_type, count in summary %}
+          <tr class="border-b border-gray-300 dark:border-gray-700">
+            <td class="py-2">{{ event_type }}</td>
+            <td class="py-2 text-right">{{ count }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="2" class="py-4 text-gray-500 dark:text-gray-400">No events.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="brutal-card p-6 mb-8 border-brutal-red">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4 text-brutal-red">Purge by Retention</h2>
+    <form method="post" action="{{ url_for('admin_purge') }}" class="space-y-4" onsubmit="return confirm('Delete events matching these criteria? This cannot be undone.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="mode" value="retention">
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Older than (days)</label>
+        <input type="number" name="custom_days" value="{{ retention_days }}" min="0" required class="w-full p-2 border-2 border-pure-black focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Campaign (optional)</label>
+        <select name="campaign_id" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">All campaigns</option>
+          {% for c in campaigns %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Event type (optional)</label>
+        <select name="event_type" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">All types</option>
+          {% for event_type, count in summary %}
+          <option value="{{ event_type }}">{{ event_type }} ({{ count }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="brutal-btn-red px-6 py-2">PURGE OLD EVENTS</button>
+    </form>
+  </div>
+
+  <div class="brutal-card p-6 border-brutal-red">
+    <h2 class="text-xl font-bold font-mono-brutal mb-4 text-brutal-red">Purge All Events</h2>
+    <form method="post" action="{{ url_for('admin_purge') }}" class="space-y-4" onsubmit="return confirm('DELETE ALL EVENTS? This cannot be undone.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="mode" value="all">
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Campaign (optional)</label>
+        <select name="campaign_id" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">All campaigns</option>
+          {% for c in campaigns %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-mono-brutal text-sm font-bold mb-1">Event type (optional)</label>
+        <select name="event_type" class="w-full p-2 border-2 border-pure-black focus:outline-none">
+          <option value="">All types</option>
+          {% for event_type, count in summary %}
+          <option value="{{ event_type }}">{{ event_type }} ({{ count }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="brutal-btn-red px-6 py-2">PURGE ALL EVENTS</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,835 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+    
+    <!-- Navigation Back Link -->
+    <div class="mb-6">
+        <a href="/campaigns" class="inline-flex items-center text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+            </svg>
+            [ BACK TO CAMPAIGNS ]
+        </a>
+    </div>
+
+    <!-- Header -->
+    <header class="mb-8 border-b-4 border-pure-black pb-6">
+        <h1 class="text-4xl font-extrabold tracking-tight text-pure-black mb-2">[ NEW_CAMPAIGN ]</h1>
+        <p class="text-sm text-brutal-red font-bold">&gt; Create and deploy email templates and landing page settings</p>
+    </header>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-8 text-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Prerequisites Check -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ 00_PREREQUISITES ]</h2>
+            {% set missing = [] %}
+            {% if not subsidiaries %} {% set _ = missing.append(('Subsidiary', url_for('sending_admin.admin_subsidiary_new', next=url_for('campaigns_admin.admin_new_campaign')))) %} {% endif %}
+            {% if not sending_profiles %} {% set _ = missing.append(('Sending Profile', url_for('sending_admin.admin_sending_profile_new', next=url_for('campaigns_admin.admin_new_campaign')))) %} {% endif %}
+            {% if not email_templates %} {% set _ = missing.append(('Email Template', url_for('templates_admin.admin_templates'))) %} {% endif %}
+
+            {% if missing %}
+            <div class="border-2 border-brutal-red bg-brutal-red/5 p-4 mb-4">
+                <p class="text-sm font-bold text-brutal-red mb-2">MISSING REQUIRED ASSETS</p>
+                <ul class="list-disc list-inside text-xs font-bold text-pure-black space-y-1">
+                    {% for label, link in missing %}
+                    <li>{{ label }} — <a href="{{ link }}" class="underline hover:text-brutal-red">create one</a> or use the inline forms below.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <p class="text-xs font-bold text-brutal-emerald">All required assets are available.</p>
+            {% endif %}
+
+            {% if not subsidiaries %}
+            <div class="border-2 border-pure-black p-4 mt-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ CREATE SUBSIDIARY INLINE ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SUBSIDIARY NAME <span class="text-brutal-red">*</span></label>
+                        <input type="text" name="inline_subsidiary_name" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="e.g., Cyberdome">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SENDING DOMAIN <span class="text-brutal-red">*</span></label>
+                        <input type="text" name="inline_subsidiary_sending_domain" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="mail.cyberdome.net">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">DISPLAY NAME <span class="text-brutal-red">*</span></label>
+                        <input type="text" name="inline_subsidiary_display_name" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="Cyberdome Security">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">FROM ADDRESS <span class="text-brutal-red">*</span></label>
+                        <input type="email" name="inline_subsidiary_from_address" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="security@mail.cyberdome.net">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">BOUNCE SUBDOMAIN</label>
+                        <input type="text" name="inline_subsidiary_bounce_subdomain" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="leave blank, or a domain you own">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">DKIM SELECTOR</label>
+                        <input type="text" name="inline_subsidiary_dkim_selector" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="the TXT label, eg dkim2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">DKIM PRIVATE KEY (PEM)</label>
+                        <textarea name="inline_subsidiary_dkim_private_key" rows="3" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black font-mono text-xs focus:border-brutal-red focus:outline-none" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not sending_profiles %}
+            <div class="border-2 border-pure-black p-4 mt-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ CREATE SENDING PROFILE INLINE ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">PROFILE NAME <span class="text-brutal-red">*</span></label>
+                        <input type="text" name="inline_profile_name" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="e.g., Primary SMTP">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SMTP HOST <span class="text-brutal-red">*</span></label>
+                        <input type="text" name="inline_profile_smtp_host" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none" placeholder="smtp.example.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SMTP PORT <span class="text-brutal-red">*</span></label>
+                        <input type="number" name="inline_profile_smtp_port" value="587" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SMTP USERNAME</label>
+                        <input type="text" name="inline_profile_smtp_user" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SMTP PASSWORD</label>
+                        <input type="password" name="inline_profile_smtp_pass" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">LINKED SUBSIDIARY</label>
+                        <select name="inline_profile_subsidiary_id" class="w-full bg-stark-white border-2 border-pure-black p-2 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                            <option value="">None (Generic SMTP)</option>
+                            {% for s in subsidiaries %}
+                            <option value="{{ s.id }}">{{ s.name }} ({{ s.sending_domain }})</option>
+                            {% endfor %}
+                        </select>
+                        {% if not subsidiaries %}
+                        <p class="text-[10px] text-gray-500 mt-1">Fill the subsidiary form above; the new subsidiary will be linked automatically.</p>
+                        {% endif %}
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+                            <input type="checkbox" name="inline_profile_use_tls" checked class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+                            USE TLS / SSL ENCRYPTION
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+
+            <h2 class="text-lg font-black text-pure-black mb-4 border-b-2 border-pure-black pb-2 uppercase">[ 01_BASIC_INFO ]</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-xs font-bold text-pure-black mb-1.5">CAMPAIGN NAME <span class="text-brutal-red">*</span></label>
+                    <input type="text" id="name" name="name" required
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                           placeholder="Q4 Security Awareness Test">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="template_id" class="block text-xs font-bold text-pure-black mb-1.5">PREFILL FROM EMAIL TEMPLATE</label>
+                    <select id="template_id" name="template_id"
+                            class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                        <option value="">-- None (manual) --</option>
+                        {% for t in email_templates %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ t.category }})</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[10px] text-gray-500 font-bold mt-1">Selecting a template prefills subject, email body, and landing page. You can still edit after prefilling.</p>
+                </div>
+
+                <div>
+                    <label for="subject" class="block text-xs font-bold text-pure-black mb-1.5">EMAIL SUBJECT <span class="text-brutal-red">*</span></label>
+                    <input type="text" id="subject" name="subject" required
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none"
+                           placeholder="Action Required: Verify Your Account">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="sending_profile_id" class="block text-xs font-bold text-pure-black mb-1.5">SENDING SMTP PROFILE <span class="text-brutal-red">*</span></label>
+                    <select id="sending_profile_id" name="sending_profile_id" required
+                            class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                        <option value="">-- Select a sending profile --</option>
+                        {% for p in sending_profiles %}
+                        <option value="{{ p.id }}">{{ p.name }} ({{ p.subsidiary.name if p.subsidiary else 'no-subsidiary-assigned' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Recipients -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-2 uppercase">[ 02_RECIPIENT_LIST ]</h2>
+            <p class="text-xs text-gray-500 font-bold mb-4">Input recipients manually or import from CSV/Excel.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="recipients" class="block text-xs font-bold text-pure-black mb-1.5">RECIPIENT EMAILS (one per line)</label>
+                    <textarea id="recipients" name="recipients" rows="6"
+                              class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black font-mono focus:border-brutal-red focus:outline-none"
+                              placeholder="user1@example.com&#10;user2@example.com"></textarea>
+                </div>
+
+                <div class="border-t-2 border-pure-black pt-4">
+                    <label for="recipients_file" class="block text-xs font-bold text-pure-black mb-1.5">OR IMPORT FROM FILE</label>
+                    <input type="file" id="recipients_file" name="recipients_file" accept=".csv,.xlsx"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    <p class="text-[10px] text-gray-500 font-bold mt-1">CSV/Excel with header row: <code>email</code>, optional <code>name</code>, optional <code>external_id</code>.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Email HTML Template -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-3 mb-4 border-b-2 border-pure-black">
+                <div>
+                    <h2 class="text-lg font-black text-pure-black uppercase tracking-tight">[ 03_EMAIL_HTML_TEMPLATE ]</h2>
+                    <p class="text-[11px] text-gray-600 font-semibold mt-0.5">Design email content and preview real-time dynamic tags</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 bg-off-white p-1.5 border-2 border-pure-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <span class="text-[10px] font-black uppercase text-gray-500 px-1">OPERATIONS TOOLS:</span>
+                    <a href="/admin/pretext-gen" target="_blank" class="px-2.5 py-1 text-xs font-extrabold bg-brutal-amber text-pure-black hover:bg-pure-black hover:text-stark-white border border-pure-black transition-colors flex items-center gap-1 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Launch Pretext Generator in Operations">
+                        <span>🪄</span> PRETEXT GENERATOR
+                    </a>
+                    <a href="/admin/osint" target="_blank" class="px-2.5 py-1 text-xs font-extrabold bg-stark-white text-pure-black hover:bg-pure-black hover:text-stark-white border border-pure-black transition-colors flex items-center gap-1 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Launch OSINT Target Discovery">
+                        <span>🔍</span> OSINT DISCOVERY
+                    </a>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap bg-off-white border-2 border-pure-black p-2 mb-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <span class="shrink-0 text-[10px] font-black uppercase text-gray-500 bg-gray-200 px-1.5 py-0.5 border border-pure-black">CLICK TO INSERT:</span>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{TRACK_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{TRACK_LINK}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{UNSUBSCRIBE_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{UNSUBSCRIBE_LINK}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CALENDAR_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{CALENDAR_LINK}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{PIXEL}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{PIXEL}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{TOKEN}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{TOKEN}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CANARY_URL}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{CANARY_URL}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{CANARY_IMAGE}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{CANARY_IMAGE}}{% endraw %}</button>
+                <button type="button" onclick="insertTemplateTag('bodyHtmlEditor', '{{HTML_SMUGGLE_LINK}}')" class="shrink-0 border border-pure-black bg-stark-white hover:bg-brutal-amber hover:text-pure-black px-2 py-0.5 text-xs text-pure-black transition-colors font-mono font-bold">{% raw %}{{HTML_SMUGGLE_LINK}}{% endraw %}</button>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+                        <span>HTML CODE EDITOR</span>
+                        <div class="flex items-center gap-3">
+                            <button type="button" onclick="insertUnsubscribeFooter()" class="text-brutal-amber hover:underline font-bold text-[11px]">
+                                + INSERT UNSUBSCRIBE FOOTER
+                            </button>
+                            <span class="text-brutal-amber font-extrabold text-[10px] uppercase">[ LIVE UPDATING ]</span>
+                        </div>
+                    </div>
+                    <textarea id="bodyHtmlEditor" name="body_html" required
+                              class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black p-2.5 font-mono text-xs focus:border-brutal-red focus:outline-none"><html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>Account Verification Required</h2>
+    <p>Dear User,</p>
+    <p>We've detected unusual activity on your account. Please verify your identity:</p>
+    <p style="text-align: center; margin: 30px 0;">
+        <a href="{% raw %}{{TRACK_LINK}}{% endraw %}" style="background: #E11D48; color: white; padding: 12px 30px; text-decoration: none; border-radius: 0px; font-weight: bold; border: 2px solid black; box-shadow: 3px 3px 0px 0px black;">Verify Account</a>
+    </p>
+    <p>Thank you,<br>Security Team</p>
+    {% raw %}{{PIXEL}}{% endraw %}
+</body>
+</html></textarea>
+                </div>
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+                        <span>PREVIEW ENGINE</span>
+                        <span class="text-gray-400 text-[10px]">HTML5 / RESPONSIVE</span>
+                    </div>
+                    <iframe id="emailPreview" class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Landing Page Template -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-2 uppercase">[ 04_LANDING_PAGE_TEMPLATE ]</h2>
+            <div class="text-xs text-gray-600 font-bold mb-4 space-x-2">
+                <span>AVAILABLE PLACEHOLDERS:</span>
+                <code class="border border-pure-black bg-off-white px-1.5 py-0.5 text-pure-black">{% raw %}{{TOKEN}}{% endraw %}</code>
+                <code class="border border-pure-black bg-off-white px-1.5 py-0.5 text-pure-black">{% raw %}{{FINGERPRINT_SCRIPT}}{% endraw %}</code>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold flex justify-between items-center">
+                        <span>HTML CODE EDITOR</span>
+                        <span class="text-brutal-amber font-extrabold">LIVE UPDATING</span>
+                    </div>
+                    <textarea id="landingHtmlEditor" name="landing_html" required
+                              class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black p-2.5 font-mono text-xs focus:border-brutal-red focus:outline-none"><html>
+<body style="font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #F4F4F6;">
+    <div style="background: white; padding: 30px; border-radius: 0px; border: 3px solid black; box-shadow: 4px 4px 0px 0px black;">
+        <h2 style="text-align: center; color: #000; font-weight: 800; font-family: sans-serif; margin-bottom: 20px;">Account Authentication</h2>
+        <form method="post">
+            <input type="hidden" name="token" value="{% raw %}{{TOKEN}}{% endraw %}">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #000; font-weight: bold; font-family: sans-serif; font-size: 12px;">USERNAME</label>
+                <input name="user" type="text" required style="width: 100%; padding: 10px; border: 2px solid black;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #000; font-weight: bold; font-family: sans-serif; font-size: 12px;">PASSWORD</label>
+                <input name="pass" type="password" required style="width: 100%; padding: 10px; border: 2px solid black;">
+            </div>
+            <button type="submit" style="width: 100%; background: #000; color: white; padding: 12px; border: none; cursor: pointer; font-weight: bold; font-family: sans-serif;">Verify Account</button>
+        </form>
+    </div>
+</body>
+</html></textarea>
+                </div>
+                <div class="lg:w-1/2 flex flex-col">
+                    <div class="bg-pure-black text-stark-white px-3 py-2 text-xs font-bold">
+                        PREVIEW ENGINE
+                    </div>
+                    <iframe id="landingPreview" class="w-full h-80 bg-stark-white border-2 border-t-0 border-pure-black"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Simulation Flow -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 05_SIMULATION_FLOW ]</h2>
+            <div class="mb-4">
+                <label for="flow_type" class="block text-xs font-bold text-pure-black mb-1.5">FLOW TYPE</label>
+                <select id="flow_type" name="flow_type"
+                        class="w-full md:w-1/2 bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                    <option value="single_step">Single-step landing page</option>
+                    <option value="credential_mfa_success">Credential &rarr; MFA &rarr; Success</option>
+                    {% if is_admin %}
+                    <option value="reverse_proxy" {% if campaign and campaign.flow_type == 'reverse_proxy' %}selected{% endif %}>
+                      Reverse Proxy (MITM — proxies a real target URL) [admin only]
+                    </option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <!-- Single-step landing page fields -->
+            <div id="single_step_fields" class="border-2 border-pure-black p-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ SINGLE-STEP ACKNOWLEDGEMENT ]</h3>
+                <div>
+                    <label for="flow_success_message" class="block text-xs font-bold text-pure-black mb-1.5">ACKNOWLEDGEMENT MESSAGE</label>
+                    <textarea id="flow_success_message" name="flow_success_message" rows="3"
+                              class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">This was an authorized phishing simulation. Your submitted input has been recorded as evidence for awareness training.</textarea>
+                </div>
+            </div>
+
+            <!-- Credential -> MFA -> Success fields -->
+            <div id="credential_mfa_fields" class="border-2 border-pure-black p-4 bg-gray-50 hidden">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ CREDENTIAL &rarr; MFA &rarr; SUCCESS ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="flow_redirect_url" class="block text-xs font-bold text-pure-black mb-1.5">SUCCESS REDIRECT URL</label>
+                        <input type="url" id="flow_redirect_url" name="flow_redirect_url"
+                               value="https://en.wikipedia.org/wiki/Phishing"
+                               class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="flow_mfa_title" class="block text-xs font-bold text-pure-black mb-1.5">MFA PAGE TITLE</label>
+                        <input type="text" id="flow_mfa_title" name="flow_mfa_title"
+                               value="Two-Factor Authentication"
+                               class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reverse-proxy specific fields -->
+            <div id="reverse_proxy_fields" class="mt-6 border-2 border-pure-black p-4 bg-gray-50 hidden">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ REVERSE PROXY TARGET ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="proxy_target_url" class="block text-xs font-bold text-pure-black mb-1.5">TARGET URL</label>
+                        <input type="url" id="proxy_target_url" name="proxy_target_url"
+                               placeholder="https://login.microsoftonline.com/..."
+                               class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                        <p class="text-xs text-gray-600 mt-1">The real site to proxy. Required when flow type is Reverse Proxy.</p>
+                    </div>
+                    <div>
+                        <label for="proxy_upstream_proxy" class="block text-xs font-bold text-pure-black mb-1.5">UPSTREAM PROXY (EGRESS)</label>
+                        <input type="text" id="proxy_upstream_proxy" name="proxy_upstream_proxy"
+                               placeholder="http://user:pass@proxy.example.com:8080"
+                               class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="proxy_tls_fingerprint" class="block text-xs font-bold text-pure-black mb-1.5">TLS FINGERPRINT</label>
+                        <input list="proxy_tls_fingerprint_options" id="proxy_tls_fingerprint" name="proxy_tls_fingerprint"
+                               placeholder="Default (httpx)"
+                               class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                        <datalist id="proxy_tls_fingerprint_options">
+                            <option value="">Default (httpx)</option>
+                            <option value="chrome120">Chrome 120</option>
+                            <option value="chrome124">Chrome 124</option>
+                            <option value="chrome131">Chrome 131</option>
+                            <option value="chrome136">Chrome 136</option>
+                            <option value="chrome131_android">Chrome 131 Android</option>
+                            <option value="firefox133">Firefox 133</option>
+                            <option value="firefox135">Firefox 135</option>
+                            <option value="safari17_0">Safari 17.0</option>
+                            <option value="safari17_2_ios">Safari 17.2 iOS</option>
+                            <option value="safari18_0">Safari 18.0</option>
+                            <option value="safari18_0_ios">Safari 18.0 iOS</option>
+                            <option value="edge101">Edge 101</option>
+                        </datalist>
+                    </div>
+                    <div class="md:col-span-2 flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="proxy_capture_credentials" checked class="w-4 h-4 border-2 border-pure-black accent-brutal-red">
+                            Capture credentials / MFA codes
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="proxy_capture_cookies" checked class="w-4 h-4 border-2 border-pure-black accent-brutal-red">
+                            Capture cookies
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="proxy_mfa_relay_enabled" checked class="w-4 h-4 border-2 border-pure-black accent-brutal-red">
+                            Enable MFA relay
+                        </label>
+                    </div>
+
+                    <div class="md:col-span-2 border-t-2 border-pure-black pt-4 mt-2">
+                        <h4 class="text-xs font-black text-pure-black mb-3 uppercase">[ PROXY DOMAIN & TLS ]</h4>
+                        {% if is_admin %}
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-pure-black mb-1">USE EXISTING PROXY DOMAIN</label>
+                            <select name="proxy_domain_id" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                                <option value="">-- Create new below --</option>
+                                {% for pd in proxy_domains %}
+                                <option value="{{ pd.id }}">{{ pd.domain }} {% if pd.tls_ready %}[TLS ready]{% else %}[TLS not ready]{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-pure-black mb-1">NEW PROXY DOMAIN</label>
+                                <input type="text" name="proxy_domain_new" placeholder="*.example.com or proxy.example.com" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-pure-black mb-1">SERVER IP</label>
+                                <input type="text" name="proxy_domain_server_ip" placeholder="203.0.113.10" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-pure-black mb-1">DNS PROVIDER</label>
+                                <select name="proxy_domain_dns_provider" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                                    <option value="none">None</option>
+                                    <option value="cloudflare">Cloudflare</option>
+                                    <option value="route53">Route53</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+                                    <input type="checkbox" name="proxy_domain_auto_tls" class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+                                    AUTO-PROVISION TLS (Let's Encrypt)
+                                </label>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-xs text-gray-600 font-bold">Proxy domain provisioning is restricted to administrators. Ask an admin to provision a domain before launch.</p>
+                        {% endif %}
+                        <p class="text-[10px] text-gray-500 mt-2 font-bold">
+                            <i class="fa-solid fa-triangle-exclamation text-brutal-amber"></i>
+                            Reverse-proxy campaigns should not be launched until a proxy domain is provisioned and TLS is ready.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Advanced Flow Options -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 06_ADVANCED_FLOW_OPTIONS ]</h2>
+            <p class="text-xs text-gray-500 font-bold mb-4">Optional OAuth2, SAML, and payload staging. Configure these before launch.</p>
+
+            <!-- OAuth2 -->
+            <div class="border-2 border-pure-black p-4 mb-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ OAUTH2 CONFIG ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">PROVIDER</label>
+                        <input type="text" name="oauth_provider" placeholder="microsoft" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">CLIENT ID</label>
+                        <input type="text" name="oauth_client_id" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">AUTHORIZATION ENDPOINT</label>
+                        <input type="url" name="oauth_authorization_endpoint" placeholder="https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">TOKEN ENDPOINT</label>
+                        <input type="url" name="oauth_token_endpoint" placeholder="https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">CLIENT SECRET</label>
+                        <input type="password" name="oauth_client_secret" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">SCOPE</label>
+                        <input type="text" name="oauth_scope" placeholder="openid profile email" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">REDIRECT URI</label>
+                        <input type="url" name="oauth_redirect_uri" placeholder="https://your-domain/oauth/callback" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">EXTRA PARAMS (key=value per line)</label>
+                        <textarea name="oauth_extra_params" rows="3" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black font-mono text-xs focus:border-brutal-red focus:outline-none" placeholder="tenant=common&#10;prompt=login"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="flex items-center gap-3 text-xs font-bold text-pure-black cursor-pointer">
+                            <input type="checkbox" name="oauth_auto_exchange" class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red focus:ring-0">
+                            AUTO-EXCHANGE AUTHORIZATION CODE FOR TOKENS
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SAML -->
+            <div class="border-2 border-pure-black p-4 mb-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ SAML / SSO RELAY ]</h3>
+                <div>
+                    <label class="block text-xs font-bold text-pure-black mb-1">REAL ACS URL</label>
+                    <input type="url" name="saml_real_acs_url" placeholder="https://idp.example.com/saml/acs" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Payload staging -->
+            <div class="border-2 border-pure-black p-4 bg-gray-50">
+                <h3 class="text-sm font-black text-pure-black mb-3 uppercase">[ PAYLOAD STAGING ]</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">PAYLOAD NAME</label>
+                        <input type="text" name="payload_name" placeholder="Dropper" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-pure-black mb-1">FILENAME</label>
+                        <input type="text" name="payload_filename" placeholder="invoice.pdf" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-pure-black mb-1">PAYLOAD FILE</label>
+                        <input type="file" name="payload_file" class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Calendar Invite Simulation -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 07_CALENDAR_INVITE_SIMULATION ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="calendar_invite" name="calendar_invite" value="1"
+                       class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="calendar_invite" class="text-xs font-bold text-pure-black">ATTACH .ICS CALENDAR INVITE</label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="calendar_event_title" class="block text-xs font-bold text-pure-black mb-1.5">EVENT TITLE</label>
+                    <input type="text" id="calendar_event_title" name="calendar_event_title" value="Mandatory Security Briefing"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div>
+                    <label for="calendar_event_location" class="block text-xs font-bold text-pure-black mb-1.5">LOCATION</label>
+                    <input type="text" id="calendar_event_location" name="calendar_event_location" value="Conference Room A"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div>
+                    <label for="calendar_event_start" class="block text-xs font-bold text-pure-black mb-1.5">START TIME (UTC)</label>
+                    <input type="datetime-local" id="calendar_event_start" name="calendar_event_start"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div>
+                    <label for="calendar_event_end" class="block text-xs font-bold text-pure-black mb-1.5">END TIME (UTC)</label>
+                    <input type="datetime-local" id="calendar_event_end" name="calendar_event_end"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Optional Training Redirection -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 08_TRAINING_REDIRECTION ]</h2>
+            <p class="text-xs text-gray-500 font-bold mb-4">Optional post-compromise awareness training.</p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="training_enabled" name="training_enabled"
+                           class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                    <label for="training_enabled" class="text-xs font-bold text-pure-black">ENABLE TRAINING REDIRECTION</label>
+                </div>
+                <div>
+                    <label for="training_url" class="block text-xs font-bold text-pure-black mb-1.5">TRAINING URL</label>
+                    <input type="url" id="training_url" name="training_url"
+                           placeholder="https://training.example.com/phishing-awareness"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div>
+                    <label for="training_duration_seconds" class="block text-xs font-bold text-pure-black mb-1.5">AUTO-COMPLETE AFTER (SECONDS)</label>
+                    <input type="number" id="training_duration_seconds" name="training_duration_seconds" value="30" min="0"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Campaign Schedule -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 09_CAMPAIGN_SCHEDULE ]</h2>
+            <p class="text-xs text-gray-500 font-bold mb-4">Launch once at a specific time or on a cron schedule.</p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="schedule_enabled" name="schedule_enabled"
+                           class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                    <label for="schedule_enabled" class="text-xs font-bold text-pure-black">ENABLE SCHEDULED LAUNCH</label>
+                </div>
+                <div>
+                    <label for="schedule_datetime" class="block text-xs font-bold text-pure-black mb-1.5">ONE-TIME LAUNCH (LOCAL TIME)</label>
+                    <input type="datetime-local" id="schedule_datetime" name="schedule_datetime"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                </div>
+                <div>
+                    <label for="schedule_cron" class="block text-xs font-bold text-pure-black mb-1.5">CRON EXPRESSION</label>
+                    <input type="text" id="schedule_cron" name="schedule_cron"
+                           placeholder="0 9 * * 1"
+                           class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                    <p class="text-[10px] text-gray-500 font-bold mt-1">MIN HOUR DOM MONTH DOW · Example: 0 9 * * 1 = Mondays 09:00</p>
+                </div>
+                <div>
+                    <label for="schedule_timezone" class="block text-xs font-bold text-pure-black mb-1.5">TIMEZONE</label>
+                    <select id="schedule_timezone" name="schedule_timezone"
+                            class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">America/New_York</option>
+                        <option value="America/Chicago">America/Chicago</option>
+                        <option value="America/Denver">America/Denver</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles</option>
+                        <option value="Europe/London">Europe/London</option>
+                        <option value="Europe/Paris">Europe/Paris</option>
+                        <option value="Asia/Tokyo">Asia/Tokyo</option>
+                        <option value="Australia/Sydney">Australia/Sydney</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Deliverability -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 10_DELIVERABILITY ]</h2>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="domain_reputation_check_enabled" name="domain_reputation_check_enabled" checked
+                           class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                    <label for="domain_reputation_check_enabled" class="text-xs font-bold text-pure-black">RUN DOMAIN REPUTATION + WARMUP CHECK BEFORE LAUNCH</label>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="use_enterprise_mailer" name="use_enterprise_mailer"
+                           class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                    <label for="use_enterprise_mailer" class="text-xs font-bold text-pure-black">USE ENTERPRISE MAILER (PRODUCTION-READY RFC COMPLIANT ENGINE)</label>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="store_credentials_plaintext" name="store_credentials_plaintext"
+                           class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                    <label for="store_credentials_plaintext" class="text-xs font-bold text-pure-black">STORE CAPTURED CREDENTIALS IN PLAINTEXT (DEFAULT: ENCRYPTED)</label>
+                </div>
+                <div>
+                    <label for="sender_rotation_pool_id" class="block text-xs font-bold text-pure-black mb-1.5">SENDER ROTATION POOL</label>
+                    <select id="sender_rotation_pool_id" name="sender_rotation_pool_id"
+                            class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                        <option value="">-- No rotation --</option>
+                        {% for pool in rotation_pools %}
+                        <option value="{{ pool.id }}">{{ pool.name }} ({{ pool.entries|length }} identities)</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[10px] text-gray-500 font-bold mt-1">
+                        <a href="{{ url_for('admin_sender_rotation_pools') }}" class="text-brutal-red hover:underline">Manage sender rotation pools</a>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 11: QR Code -->
+        <section class="border-4 border-pure-black bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-pure-black mb-4 uppercase">[ 11_QR_CODE ]</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <input type="checkbox" id="qr_code_enabled" name="qr_code_enabled"
+                       class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                <label for="qr_code_enabled" class="text-xs font-bold text-pure-black">EMBED PER-RECIPIENT QR CODE IN EMAIL BODY (USE {{ '{{QR_CODE}}' }})</label>
+            </div>
+            <p class="text-xs text-gray-500 font-bold">When enabled, sending replaces <code class="bg-off-white dark:bg-black px-1 border border-gray-300 dark:border-gray-700">{{ '{{QR_CODE}}' }}</code> with a tracked QR code image per recipient.</p>
+        </section>
+
+        {% if is_admin %}
+        <!-- Section 12: Advanced Red-Team Features (admin only) -->
+        <section class="border-4 border-brutal-red bg-stark-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 class="text-lg font-black text-brutal-red mb-4 uppercase">[ 12_ADVANCED_RED_TEAM_FEATURES ]</h2>
+            <p class="text-xs text-brutal-red font-bold mb-4">These features are restricted to administrators. Only enable them when explicitly authorized in scope.</p>
+
+            <div class="space-y-6">
+                <div class="border-2 border-pure-black p-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <input type="checkbox" id="sandbox_evasion_enabled" name="sandbox_evasion_enabled"
+                               class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                        <label for="sandbox_evasion_enabled" class="text-xs font-bold text-pure-black">ENABLE URL SANDBOX EVASION</label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="edr_detection" checked class="w-4 h-4 border-2 border-pure-black accent-brutal-red">
+                            ENABLE WESTERN EDR DETECTION (DEFENDER, CROWDSTRIKE, SENTINELONE)
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-pure-black">
+                            <input type="checkbox" name="ip_reputation_filter" checked class="w-4 h-4 border-2 border-pure-black accent-brutal-red">
+                            BLOCK RESEARCH / SANDBOX IP RANGES
+                        </label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold text-pure-black mb-1">SAFE LINKS AWARENESS MODE</label>
+                        <select name="safelinks_mode" class="w-full bg-stark-white border-2 border-pure-black p-2 text-xs text-pure-black focus:border-brutal-red focus:outline-none bg-white">
+                            <option value="standard">Standard (Direct URL)</option>
+                            <option value="safelinks-compatible">Safe-Links-Compatible (Survive O365 Rewrite)</option>
+                            <option value="attachment-only">Attachment-Only (Bypass URL Scanner)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sandbox_safe_html" class="block text-xs font-bold text-pure-black mb-1.5">SAFE LANDING HTML (SHOWN TO NON-TARGET/SANDBOX BROWSERS)</label>
+                        <textarea id="sandbox_safe_html" name="sandbox_safe_html" rows="4"
+                                  class="w-full bg-stark-white border-2 border-pure-black p-2.5 font-mono text-xs focus:border-brutal-red focus:outline-none"
+                                  placeholder="<html><body><p>This page is unavailable.</p></body></html>"></textarea>
+                    </div>
+                </div>
+
+                <div class="border-2 border-pure-black p-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <input type="checkbox" id="html_smuggling_enabled" name="html_smuggling_enabled"
+                               class="w-5 h-5 border-2 border-pure-black accent-brutal-red">
+                        <label for="html_smuggling_enabled" class="text-xs font-bold text-pure-black">ENABLE HTML SMUGGLING / POLYGLOT PAYLOAD</label>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="html_smuggling_filename" class="block text-xs font-bold text-pure-black mb-1.5">PAYLOAD FILENAME</label>
+                            <input type="text" id="html_smuggling_filename" name="html_smuggling_filename"
+                                   class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="html_smuggling_payload_file" class="block text-xs font-bold text-pure-black mb-1.5">PAYLOAD FILE</label>
+                            <input type="file" id="html_smuggling_payload_file" name="html_smuggling_payload_file"
+                                   class="w-full bg-stark-white border-2 border-pure-black p-2.5 text-pure-black focus:border-brutal-red focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="html_smuggling_payload_text" class="block text-xs font-bold text-pure-black mb-1.5">OR PAYLOAD TEXT</label>
+                            <textarea id="html_smuggling_payload_text" name="html_smuggling_payload_text" rows="3"
+                                      class="w-full bg-stark-white border-2 border-pure-black p-2.5 font-mono text-xs focus:border-brutal-red focus:outline-none"
+                                      placeholder="Paste raw payload content here (will be base64 encoded)"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Submit Panel -->
+        <div class="flex items-center justify-between pt-6">
+            <a href="/campaigns" class="text-xs font-bold text-gray-700 hover:text-pure-black transition-colors">
+                &larr; [ BACK TO CAMPAIGNS ]
+            </a>
+            <button type="submit"
+                    class="px-8 py-3 brutal-btn-black text-xs tracking-wider font-extrabold">
+                [ CREATE CAMPAIGN ]
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function wrapPreviewHtml(bodyHtml) {
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + bodyHtml + '</body></html>';
+}
+
+function insertTemplateTag(editorId, tag) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    const start = editor.selectionStart || editor.value.length;
+    const end = editor.selectionEnd || editor.value.length;
+    editor.value = editor.value.substring(0, start) + tag + editor.value.substring(end);
+    previewEmailTemplate();
+}
+
+function insertUnsubscribeFooter() {
+    const editor = document.getElementById('bodyHtmlEditor');
+    const footerHtml = '\n<p style="font-size:11px; color:#666666; text-align:center; margin-top:30px;"><a href="{% raw %}{{UNSUBSCRIBE_LINK}}{% endraw %}" style="color:#666666; text-decoration:underline;">Unsubscribe from communications</a></p>';
+    editor.value += footerHtml;
+    previewEmailTemplate();
+}
+
+function previewEmailTemplate() {
+    const html = document.getElementById('bodyHtmlEditor').value;
+    const demoHtml = html
+        .replace(/\{\{TRACK_LINK\}\}/g, 'https://demo.local/track/demo-token')
+        .replace(/\{\{UNSUBSCRIBE_LINK\}\}/g, 'https://demo.local/unsubscribe/demo-token')
+        .replace(/\{\{PIXEL\}\}/g, '<img src="https://demo.local/pixel/demo-token" width="1" height="1" alt="">')
+        .replace(/\{\{TOKEN\}\}/g, 'demo-token-xyz')
+        .replace(/\{\{CANARY_URL\}\}/g, 'https://demo.local/canary/demo-token')
+        .replace(/\{\{CANARY_IMAGE\}\}/g, '<img src="https://demo.local/canary/demo-token.gif" width="1" height="1" alt="">')
+        .replace(/\{\{QR_CODE\}\}/g, '<div style="border:2px dashed #000;padding:10px;text-align:center;font-family:monospace;font-size:12px;">[ QR CODE WILL RENDER HERE ]</div>');
+    const preview = document.getElementById('emailPreview');
+    preview.srcdoc = wrapPreviewHtml(demoHtml);
+}
+
+function previewLandingTemplate() {
+    const html = document.getElementById('landingHtmlEditor').value;
+    const demoHtml = html.replace(/\{\{TOKEN\}\}/g, 'demo-token-xyz');
+    const preview = document.getElementById('landingPreview');
+    preview.srcdoc = wrapPreviewHtml(demoHtml);
+}
+
+// Wire live preview on input.
+document.getElementById('bodyHtmlEditor').addEventListener('input', previewEmailTemplate);
+document.getElementById('landingHtmlEditor').addEventListener('input', previewLandingTemplate);
+
+// Toggle flow-specific fields based on the selected simulation flow.
+function updateFlowTypeFields() {
+    const flowType = document.getElementById('flow_type').value;
+    const singleStepFields = document.getElementById('single_step_fields');
+    const mfaFields = document.getElementById('credential_mfa_fields');
+    const proxyFields = document.getElementById('reverse_proxy_fields');
+
+    singleStepFields.classList.toggle('hidden', flowType !== 'single_step');
+    mfaFields.classList.toggle('hidden', flowType !== 'credential_mfa_success');
+    proxyFields.classList.toggle('hidden', flowType !== 'reverse_proxy');
+}
+document.getElementById('flow_type').addEventListener('change', updateFlowTypeFields);
+updateFlowTypeFields();
+
+// Template prefill: fetch template content and populate editors.
+document.getElementById('template_id').addEventListener('change', async function() {
+    const id = this.value;
+    if (!id) return;
+    try {
+        const resp = await fetch('/api/v1/templates/' + id);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const t = await resp.json();
+        if (t.subject) document.getElementById('subject').value = t.subject;
+        if (t.body_html) document.getElementById('bodyHtmlEditor').value = t.body_html;
+        if (t.landing_html) document.getElementById('landingHtmlEditor').value = t.landing_html;
+        previewEmailTemplate();
+        previewLandingTemplate();
+    } catch (err) {
+        alert('Failed to load template: ' + err.message);
+    }
+});
+
+// Initial render.
+previewEmailTemplate();
+previewLandingTemplate();
+</script>
+{% endblock %}

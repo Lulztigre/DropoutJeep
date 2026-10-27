@@ -1,0 +1,36 @@
+# Standalone async proxy for clean URLs (https://login.example.com/path).
+# Start it next to the main stack: docker compose -f docker-compose.proxy.yml up -d
+# It has to join the same Docker network as Caddy, otherwise the Caddyfile block
+# `reverse_proxy dropoutjeep-proxy:8080` cannot reach it.
+services:
+  dropoutjeep-proxy:
+    build: .
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/instance/phish.db}
+      - PROXY_HOST=0.0.0.0
+      - PROXY_PORT=8080
+    volumes:
+      - dropoutjeep-data:/app/instance
+    ports:
+      # Loopback only. Caddy reaches this over the Docker network; the publish
+      # exists so you can curl the proxy from the host while testing.
+      - "127.0.0.1:8080:8080"
+    command: ["python", "proxy_server.py"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dropoutjeep
+
+volumes:
+  # Same project name and volume key as docker-compose.yml, so both stacks
+  # mount the same database volume.
+  dropoutjeep-data:
+
+networks:
+  dropoutjeep:
+    external: true
+    name: dropoutjeep-net

